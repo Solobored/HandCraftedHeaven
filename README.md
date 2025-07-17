@@ -22,7 +22,7 @@ Handcrafted Haven is an innovative web application that serves as a virtual mark
 
 ### Meeting Content Summary
 
-1. **Project Requirements Review**: We thoroughly discussed the Handcrafted Haven project specifications, including the core functionality requirements for seller profiles, product listings, and review systems.
+1. **Project Requirements Review**: We discussed the Handcrafted Haven project specifications, including the core functionality requirements for seller profiles, product listings, and review systems.
 
 2. **Repository Setup**: Created the GitHub repository and configured project settings, including public access and collaborative permissions.
 
@@ -33,7 +33,7 @@ Handcrafted Haven is an innovative web application that serves as a virtual mark
    - Database: TBD (considering options)
    - Deployment: Vercel
 
-4. **Design Theme Planning**: Established the visual identity and user experience approach for the platform.
+4. **Design Theme Planning**: Established the visual and user experience approach for the platform.
 
 5. **Work Item Brainstorming**: Identified initial user stories and development tasks to guide our project development.
 
