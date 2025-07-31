@@ -1,451 +1,535 @@
 "use client"
 
-import { useState } from "react"
-import Header from "@/components/header"
-import Footer from "@/components/footer"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import * as React from "react"
+import {
+  Activity,
+  CreditCard,
+  DollarSign,
+  Users,
+  Package,
+  FileText,
+  AlertCircle,
+  Clock,
+  MoreHorizontal,
+  ArrowUpRight,
+} from "lucide-react"
+
 import { Badge } from "@/components/ui/badge"
-import { Users, Package, DollarSign, TrendingUp, Search, Eye, Edit, Trash2, UserX, AlertTriangle } from "lucide-react"
-
-const mockStats = {
-  totalUsers: 1247,
-  totalProducts: 3456,
-  totalSales: 89234,
-  monthlyRevenue: 45678,
-  pendingOrders: 23,
-  reportedItems: 5,
-}
-
-const mockUsers = [
-  {
-    id: 1,
-    name: "Maria Rodriguez",
-    email: "maria@ceramics.com",
-    type: "Seller",
-    status: "Active",
-    joinDate: "2023-01-15",
-    totalSales: 234,
-    revenue: 12450,
-  },
-  {
-    id: 2,
-    name: "John Smith",
-    email: "john.smith@email.com",
-    type: "Buyer",
-    status: "Active",
-    joinDate: "2023-03-22",
-    totalOrders: 15,
-    spent: 890,
-  },
-  {
-    id: 3,
-    name: "Sarah Johnson",
-    email: "sarah@woodworks.com",
-    type: "Seller",
-    status: "Pending",
-    joinDate: "2024-01-10",
-    totalSales: 12,
-    revenue: 650,
-  },
-]
-
-const mockProducts = [
-  {
-    id: 1,
-    name: "Handwoven Ceramic Bowl Set",
-    seller: "Maria's Ceramics",
-    category: "Pottery & Ceramics",
-    price: 89,
-    status: "Active",
-    sales: 47,
-    revenue: 4183,
-    dateAdded: "2024-01-15",
-  },
-  {
-    id: 2,
-    name: "Macrame Wall Hanging",
-    seller: "Boho Crafts Co.",
-    category: "Home Decor",
-    price: 65,
-    status: "Active",
-    sales: 32,
-    revenue: 2080,
-    dateAdded: "2024-01-20",
-  },
-  {
-    id: 3,
-    name: "Vintage Leather Wallet",
-    seller: "Craft Corner",
-    category: "Accessories",
-    price: 45,
-    status: "Reported",
-    sales: 8,
-    revenue: 360,
-    dateAdded: "2024-01-18",
-  },
-]
+import { Button } from "@/components/ui/button"
+import { Link } from "next/link"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Input } from "@/components/ui/input"
+import { Separator } from "@/components/ui/separator"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function AdminPage() {
-  const [activeTab, setActiveTab] = useState("overview")
-  const [searchQuery, setSearchQuery] = useState("")
+  const [activeTab, setActiveTab] = React.useState("overview")
+  const [userSearch, setUserSearch] = React.useState("")
+  const [productSearch, setProductSearch] = React.useState("")
 
-  const StatCard = ({ title, value, icon: Icon, trend, color = "text-sage-900" }) => (
-    <Card className="border-sage-200">
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-sage-600">{title}</p>
-            <p className={`text-2xl font-bold ${color}`}>{value}</p>
-            {trend && (
-              <p className="text-xs text-green-600 flex items-center mt-1">
-                <TrendingUp className="w-3 h-3 mr-1" />
-                {trend}
-              </p>
-            )}
-          </div>
-          <div className="w-12 h-12 bg-sage-100 rounded-full flex items-center justify-center">
-            <Icon className="w-6 h-6 text-sage-600" />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+  // Dummy Data for Admin Dashboard
+  const stats = [
+    {
+      title: "Total Revenue",
+      value: "$45,231.89",
+      change: "+20.1% from last month",
+      icon: DollarSign,
+    },
+    {
+      title: "Subscriptions",
+      value: "+2350",
+      change: "+180.1% from last month",
+      icon: Users,
+    },
+    {
+      title: "Sales",
+      value: "+12,234",
+      change: "+19% from last month",
+      icon: CreditCard,
+    },
+    {
+      title: "Active Now",
+      value: "+573",
+      change: "+201 since last hour",
+      icon: Activity,
+    },
+  ]
+
+  const recentSales = [
+    {
+      customer: "Olivia Martin",
+      email: "olivia.martin@example.com",
+      amount: "+$1,999.00",
+    },
+    {
+      customer: "Jackson Lee",
+      email: "jackson.lee@example.com",
+      amount: "+$39.00",
+    },
+    {
+      customer: "Isabella Nguyen",
+      email: "isabella.nguyen@example.com",
+      amount: "+$299.00",
+    },
+    {
+      customer: "William Kim",
+      email: "will.kim@example.com",
+      amount: "+$99.00",
+    },
+    {
+      customer: "Sofia Davis",
+      email: "sofia.davis@example.com",
+      amount: "+$39.00",
+    },
+  ]
+
+  const users = [
+    { id: "1", name: "Alice Smith", email: "alice@example.com", status: "Active", role: "Customer" },
+    { id: "2", name: "Bob Johnson", email: "bob@example.com", status: "Active", role: "Seller" },
+    { id: "3", name: "Charlie Brown", email: "charlie@example.com", status: "Suspended", role: "Customer" },
+    { id: "4", name: "Diana Prince", email: "diana@example.com", status: "Active", role: "Seller" },
+    { id: "5", name: "Eve Adams", email: "eve@example.com", status: "Pending", role: "Customer" },
+  ]
+
+  const productsData = [
+    { id: "p1", name: "Hand-painted Ceramic Mug", seller: "Artisan Crafts", status: "Active", stock: 15, sales: 120 },
+    { id: "p2", name: "Knitted Wool Scarf", seller: "Cozy Knits", status: "Pending Review", stock: 5, sales: 30 },
+    { id: "p3", name: "Custom Leather Wallet", seller: "Leather Works", status: "Active", stock: 20, sales: 80 },
+    { id: "p4", name: "Organic Soy Candle", seller: "Nature's Glow", status: "Reported", stock: 10, sales: 50 },
+    { id: "p5", name: "Handmade Silver Necklace", seller: "Jewel Craft", status: "Active", stock: 8, sales: 90 },
+  ]
+
+  const orders = [
+    {
+      id: "o1",
+      customer: "Alice Smith",
+      product: "Ceramic Mug",
+      amount: "$25.00",
+      status: "Completed",
+      date: "2023-10-26",
+    },
+    {
+      id: "o2",
+      customer: "Bob Johnson",
+      product: "Wool Scarf",
+      amount: "$45.00",
+      status: "Pending",
+      date: "2023-10-25",
+    },
+    {
+      id: "o3",
+      customer: "Charlie Brown",
+      product: "Leather Wallet",
+      amount: "$70.00",
+      status: "Cancelled",
+      date: "2023-10-24",
+    },
+    {
+      id: "o4",
+      customer: "Diana Prince",
+      product: "Soy Candle",
+      amount: "$18.00",
+      status: "Completed",
+      date: "2023-10-23",
+    },
+  ]
+
+  const filteredUsers = users.filter(
+    (user) =>
+      user.name.toLowerCase().includes(userSearch.toLowerCase()) ||
+      user.email.toLowerCase().includes(userSearch.toLowerCase()),
   )
 
-  const TabButton = ({ id, label, isActive, onClick }) => (
-    <button
-      onClick={() => onClick(id)}
-      className={`px-4 py-2 rounded-md font-medium transition-colors ${
-        isActive ? "bg-terracotta-600 text-white" : "text-sage-700 hover:bg-sage-100"
-      }`}
-    >
-      {label}
-    </button>
+  const filteredProducts = productsData.filter(
+    (product) =>
+      product.name.toLowerCase().includes(productSearch.toLowerCase()) ||
+      product.seller.toLowerCase().includes(productSearch.toLowerCase()),
   )
 
   return (
-    <div className="min-h-screen bg-cream-50">
-      <Header />
+    <div className="flex min-h-screen w-full flex-col bg-muted/40">
+      <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-14">
+        <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
+          <h1 className="text-2xl font-semibold">Admin Dashboard</h1>
+        </header>
+        <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-5">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="users">Users</TabsTrigger>
+              <TabsTrigger value="products">Products</TabsTrigger>
+              <TabsTrigger value="orders">Orders</TabsTrigger>
+              <TabsTrigger value="reports">Reports</TabsTrigger>
+            </TabsList>
 
-      <main className="container mx-auto px-4 py-8">
-        {/* Page Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl lg:text-4xl font-bold text-sage-900 mb-4">Admin Dashboard</h1>
-          <p className="text-lg text-sage-600">Manage users, products, and monitor platform performance</p>
-        </div>
+            {/* Overview Tab */}
+            <TabsContent value="overview" className="mt-4">
+              <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+                {stats.map((stat, index) => (
+                  <Card key={index}>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+                      <stat.icon className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{stat.value}</div>
+                      <p className="text-xs text-muted-foreground">{stat.change}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+              <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3 mt-4">
+                <Card className="xl:col-span-2">
+                  <CardHeader className="flex flex-row items-center">
+                    <div className="grid gap-2">
+                      <CardTitle>Recent Sales</CardTitle>
+                      <CardDescription>You made 265 sales this month.</CardDescription>
+                    </div>
+                    <Button asChild size="sm" className="ml-auto gap-1">
+                      <Link href="#">
+                        View All
+                        <ArrowUpRight className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </CardHeader>
+                  <CardContent>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Customer</TableHead>
+                          <TableHead className="hidden xl:table-column">Type</TableHead>
+                          <TableHead className="hidden xl:table-column">Status</TableHead>
+                          <TableHead className="hidden md:table-column">Date</TableHead>
+                          <TableHead className="text-right">Amount</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {recentSales.map((sale, index) => (
+                          <TableRow key={index}>
+                            <TableCell>
+                              <div className="font-medium">{sale.customer}</div>
+                              <div className="hidden text-sm text-muted-foreground md:inline">{sale.email}</div>
+                            </TableCell>
+                            <TableCell className="hidden xl:table-column">Sale</TableCell>
+                            <TableCell className="hidden xl:table-column">
+                              <Badge className="text-xs" variant="outline">
+                                Approved
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="hidden md:table-column">2023-06-23</TableCell>
+                            <TableCell className="text-right">{sale.amount}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Pending Actions</CardTitle>
+                    <CardDescription>Items requiring your attention.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="grid gap-4">
+                    <div className="flex items-center gap-4">
+                      <AlertCircle className="h-5 w-5 text-orange-500" />
+                      <div>
+                        <p className="font-medium">2 Products Pending Review</p>
+                        <p className="text-sm text-muted-foreground">New products awaiting approval.</p>
+                      </div>
+                      <Button variant="ghost" size="sm" className="ml-auto">
+                        Review
+                      </Button>
+                    </div>
+                    <Separator />
+                    <div className="flex items-center gap-4">
+                      <Clock className="h-5 w-5 text-blue-500" />
+                      <div>
+                        <p className="font-medium">1 Order Awaiting Shipment</p>
+                        <p className="text-sm text-muted-foreground">Order #12345 needs to be shipped.</p>
+                      </div>
+                      <Button variant="ghost" size="sm" className="ml-auto">
+                        Ship
+                      </Button>
+                    </div>
+                    <Separator />
+                    <div className="flex items-center gap-4">
+                      <Users className="h-5 w-5 text-purple-500" />
+                      <div>
+                        <p className="font-medium">1 User Pending Approval</p>
+                        <p className="text-sm text-muted-foreground">New seller account needs verification.</p>
+                      </div>
+                      <Button variant="ghost" size="sm" className="ml-auto">
+                        Approve
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
 
-        {/* Navigation Tabs */}
-        <div className="flex flex-wrap gap-2 mb-8 bg-white p-2 rounded-lg border border-sage-200">
-          <TabButton id="overview" label="Overview" isActive={activeTab === "overview"} onClick={setActiveTab} />
-          <TabButton id="users" label="Users" isActive={activeTab === "users"} onClick={setActiveTab} />
-          <TabButton id="products" label="Products" isActive={activeTab === "products"} onClick={setActiveTab} />
-          <TabButton id="orders" label="Orders" isActive={activeTab === "orders"} onClick={setActiveTab} />
-          <TabButton id="reports" label="Reports" isActive={activeTab === "reports"} onClick={setActiveTab} />
-        </div>
-
-        {/* Overview Tab */}
-        {activeTab === "overview" && (
-          <div className="space-y-8">
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <StatCard
-                title="Total Users"
-                value={mockStats.totalUsers.toLocaleString()}
-                icon={Users}
-                trend="+12% this month"
-              />
-              <StatCard
-                title="Total Products"
-                value={mockStats.totalProducts.toLocaleString()}
-                icon={Package}
-                trend="+8% this month"
-              />
-              <StatCard
-                title="Monthly Revenue"
-                value={`$${mockStats.monthlyRevenue.toLocaleString()}`}
-                icon={DollarSign}
-                trend="+15% this month"
-                color="text-green-600"
-              />
-              <StatCard
-                title="Total Sales"
-                value={mockStats.totalSales.toLocaleString()}
-                icon={TrendingUp}
-                trend="+23% this month"
-              />
-            </div>
-
-            {/* Alert Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="border-amber-200 bg-amber-50">
+            {/* Users Tab */}
+            <TabsContent value="users" className="mt-4">
+              <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center text-amber-800">
-                    <AlertTriangle className="w-5 h-5 mr-2" />
-                    Pending Actions
-                  </CardTitle>
+                  <CardTitle>User Management</CardTitle>
+                  <CardDescription>Manage all registered users.</CardDescription>
+                  <div className="mt-4 flex items-center gap-2">
+                    <Input
+                      placeholder="Search users..."
+                      value={userSearch}
+                      onChange={(e) => setUserSearch(e.target.value)}
+                      className="max-w-sm"
+                    />
+                    <Button variant="outline">Add User</Button>
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
-                    <p className="text-sm text-amber-700">• {mockStats.pendingOrders} orders awaiting approval</p>
-                    <p className="text-sm text-amber-700">• 3 seller applications pending review</p>
-                    <p className="text-sm text-amber-700">• {mockStats.reportedItems} reported items need attention</p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-sage-200">
-                <CardHeader>
-                  <CardTitle className="text-sage-900">Quick Actions</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Button className="w-full bg-terracotta-600 hover:bg-terracotta-700 text-white">
-                    Review Pending Sellers
-                  </Button>
-                  <Button variant="outline" className="w-full border-sage-300 text-sage-700 bg-transparent">
-                    Export Monthly Report
-                  </Button>
-                  <Button variant="outline" className="w-full border-sage-300 text-sage-700 bg-transparent">
-                    Manage Categories
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        )}
-
-        {/* Users Tab */}
-        {activeTab === "users" && (
-          <div className="space-y-6">
-            {/* Search and Filters */}
-            <div className="bg-white rounded-lg shadow-sm border border-sage-200 p-6">
-              <div className="flex flex-col md:flex-row gap-4 items-center">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sage-400 w-4 h-4" />
-                  <Input
-                    type="search"
-                    placeholder="Search users by name or email..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 border-sage-300 focus:border-terracotta-400"
-                  />
-                </div>
-                <select className="px-4 py-2 border border-sage-300 rounded-md focus:border-terracotta-400">
-                  <option value="">All User Types</option>
-                  <option value="buyer">Buyers</option>
-                  <option value="seller">Sellers</option>
-                </select>
-                <select className="px-4 py-2 border border-sage-300 rounded-md focus:border-terracotta-400">
-                  <option value="">All Status</option>
-                  <option value="active">Active</option>
-                  <option value="pending">Pending</option>
-                  <option value="suspended">Suspended</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Users Table */}
-            <Card className="border-sage-200">
-              <CardHeader>
-                <CardTitle>User Management</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-sage-200">
-                        <th className="text-left py-3 px-4 font-medium text-sage-700">User</th>
-                        <th className="text-left py-3 px-4 font-medium text-sage-700">Type</th>
-                        <th className="text-left py-3 px-4 font-medium text-sage-700">Status</th>
-                        <th className="text-left py-3 px-4 font-medium text-sage-700">Join Date</th>
-                        <th className="text-left py-3 px-4 font-medium text-sage-700">Activity</th>
-                        <th className="text-left py-3 px-4 font-medium text-sage-700">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {mockUsers.map((user) => (
-                        <tr key={user.id} className="border-b border-sage-100 hover:bg-sage-50">
-                          <td className="py-3 px-4">
-                            <div>
-                              <p className="font-medium text-sage-900">{user.name}</p>
-                              <p className="text-sm text-sage-600">{user.email}</p>
-                            </div>
-                          </td>
-                          <td className="py-3 px-4">
-                            <Badge variant={user.type === "Seller" ? "default" : "secondary"}>{user.type}</Badge>
-                          </td>
-                          <td className="py-3 px-4">
-                            <Badge
-                              variant={user.status === "Active" ? "default" : "secondary"}
-                              className={user.status === "Active" ? "bg-green-100 text-green-800" : ""}
-                            >
-                              {user.status}
-                            </Badge>
-                          </td>
-                          <td className="py-3 px-4 text-sm text-sage-600">
-                            {new Date(user.joinDate).toLocaleDateString()}
-                          </td>
-                          <td className="py-3 px-4 text-sm text-sage-600">
-                            {user.type === "Seller" ? (
-                              <div>
-                                <p>{user.totalSales} sales</p>
-                                <p>${user.revenue} revenue</p>
-                              </div>
-                            ) : (
-                              <div>
-                                <p>{user.totalOrders} orders</p>
-                                <p>${user.spent} spent</p>
-                              </div>
-                            )}
-                          </td>
-                          <td className="py-3 px-4">
-                            <div className="flex items-center space-x-2">
-                              <Button variant="ghost" size="sm">
-                                <Eye className="w-4 h-4" />
-                              </Button>
-                              <Button variant="ghost" size="sm">
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700">
-                                <UserX className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>ID</TableHead>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Role</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredUsers.map((user) => (
+                        <TableRow key={user.id}>
+                          <TableCell>{user.id}</TableCell>
+                          <TableCell>{user.name}</TableCell>
+                          <TableCell>{user.email}</TableCell>
+                          <TableCell>
+                            <Badge variant={user.status === "Active" ? "default" : "destructive"}>{user.status}</Badge>
+                          </TableCell>
+                          <TableCell>{user.role}</TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                  <span className="sr-only">Open menu</span>
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuItem>Edit</DropdownMenuItem>
+                                <DropdownMenuItem>Suspend</DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem>Delete</DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
                       ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-        {/* Products Tab */}
-        {activeTab === "products" && (
-          <div className="space-y-6">
-            {/* Search and Filters */}
-            <div className="bg-white rounded-lg shadow-sm border border-sage-200 p-6">
-              <div className="flex flex-col md:flex-row gap-4 items-center">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sage-400 w-4 h-4" />
-                  <Input
-                    type="search"
-                    placeholder="Search products..."
-                    className="pl-10 border-sage-300 focus:border-terracotta-400"
-                  />
-                </div>
-                <select className="px-4 py-2 border border-sage-300 rounded-md focus:border-terracotta-400">
-                  <option value="">All Categories</option>
-                  <option value="pottery">Pottery & Ceramics</option>
-                  <option value="textiles">Textiles & Fiber</option>
-                  <option value="woodworking">Woodworking</option>
-                </select>
-                <select className="px-4 py-2 border border-sage-300 rounded-md focus:border-terracotta-400">
-                  <option value="">All Status</option>
-                  <option value="active">Active</option>
-                  <option value="pending">Pending</option>
-                  <option value="reported">Reported</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Products Table */}
-            <Card className="border-sage-200">
-              <CardHeader>
-                <CardTitle>Product Management</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-sage-200">
-                        <th className="text-left py-3 px-4 font-medium text-sage-700">Product</th>
-                        <th className="text-left py-3 px-4 font-medium text-sage-700">Seller</th>
-                        <th className="text-left py-3 px-4 font-medium text-sage-700">Category</th>
-                        <th className="text-left py-3 px-4 font-medium text-sage-700">Price</th>
-                        <th className="text-left py-3 px-4 font-medium text-sage-700">Status</th>
-                        <th className="text-left py-3 px-4 font-medium text-sage-700">Performance</th>
-                        <th className="text-left py-3 px-4 font-medium text-sage-700">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {mockProducts.map((product) => (
-                        <tr key={product.id} className="border-b border-sage-100 hover:bg-sage-50">
-                          <td className="py-3 px-4">
-                            <p className="font-medium text-sage-900">{product.name}</p>
-                            <p className="text-sm text-sage-600">
-                              Added {new Date(product.dateAdded).toLocaleDateString()}
-                            </p>
-                          </td>
-                          <td className="py-3 px-4 text-sm text-sage-600">{product.seller}</td>
-                          <td className="py-3 px-4">
-                            <Badge variant="outline">{product.category}</Badge>
-                          </td>
-                          <td className="py-3 px-4 font-medium text-sage-900">${product.price}</td>
-                          <td className="py-3 px-4">
+            {/* Products Tab */}
+            <TabsContent value="products" className="mt-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Product Management</CardTitle>
+                  <CardDescription>Manage all products on the platform.</CardDescription>
+                  <div className="mt-4 flex items-center gap-2">
+                    <Input
+                      placeholder="Search products..."
+                      value={productSearch}
+                      onChange={(e) => setProductSearch(e.target.value)}
+                      className="max-w-sm"
+                    />
+                    <Button variant="outline">Add Product</Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>ID</TableHead>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Seller</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Stock</TableHead>
+                        <TableHead>Sales</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredProducts.map((product) => (
+                        <TableRow key={product.id}>
+                          <TableCell>{product.id}</TableCell>
+                          <TableCell>{product.name}</TableCell>
+                          <TableCell>{product.seller}</TableCell>
+                          <TableCell>
                             <Badge
-                              variant={product.status === "Active" ? "default" : "secondary"}
-                              className={
+                              variant={
                                 product.status === "Active"
-                                  ? "bg-green-100 text-green-800"
-                                  : product.status === "Reported"
-                                    ? "bg-red-100 text-red-800"
-                                    : ""
+                                  ? "default"
+                                  : product.status === "Pending Review"
+                                    ? "secondary"
+                                    : "destructive"
                               }
                             >
                               {product.status}
                             </Badge>
-                          </td>
-                          <td className="py-3 px-4 text-sm text-sage-600">
-                            <div>
-                              <p>{product.sales} sales</p>
-                              <p>${product.revenue} revenue</p>
-                            </div>
-                          </td>
-                          <td className="py-3 px-4">
-                            <div className="flex items-center space-x-2">
-                              <Button variant="ghost" size="sm">
-                                <Eye className="w-4 h-4" />
-                              </Button>
-                              <Button variant="ghost" size="sm">
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700">
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
+                          </TableCell>
+                          <TableCell>{product.stock}</TableCell>
+                          <TableCell>{product.sales}</TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                  <span className="sr-only">Open menu</span>
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuItem>View Details</DropdownMenuItem>
+                                <DropdownMenuItem>Edit</DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem>Approve</DropdownMenuItem>
+                                <DropdownMenuItem>Reject</DropdownMenuItem>
+                                <DropdownMenuItem>Delete</DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
                       ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-        {/* Placeholder for other tabs */}
-        {(activeTab === "orders" || activeTab === "reports") && (
-          <Card className="border-sage-200">
-            <CardContent className="p-12 text-center">
-              <Package className="w-16 h-16 text-sage-300 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-sage-900 mb-2">
-                {activeTab === "orders" ? "Orders Management" : "Reports & Analytics"}
-              </h3>
-              <p className="text-sage-600 mb-4">
-                {activeTab === "orders"
-                  ? "Order management functionality will be implemented here."
-                  : "Advanced reporting and analytics features will be available here."}
-              </p>
-              <Button className="bg-terracotta-600 hover:bg-terracotta-700 text-white">Coming Soon</Button>
-            </CardContent>
-          </Card>
-        )}
-      </main>
+            {/* Orders Tab */}
+            <TabsContent value="orders" className="mt-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Order Management</CardTitle>
+                  <CardDescription>Track and manage all customer orders.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Order ID</TableHead>
+                        <TableHead>Customer</TableHead>
+                        <TableHead>Product</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {orders.map((order) => (
+                        <TableRow key={order.id}>
+                          <TableCell>{order.id}</TableCell>
+                          <TableCell>{order.customer}</TableCell>
+                          <TableCell>{order.product}</TableCell>
+                          <TableCell>{order.amount}</TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                order.status === "Completed"
+                                  ? "default"
+                                  : order.status === "Pending"
+                                    ? "secondary"
+                                    : "destructive"
+                              }
+                            >
+                              {order.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{order.date}</TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                  <span className="sr-only">Open menu</span>
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuItem>View Details</DropdownMenuItem>
+                                <DropdownMenuItem>Update Status</DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem>Refund</DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-      <Footer />
+            {/* Reports Tab */}
+            <TabsContent value="reports" className="mt-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Reports & Analytics</CardTitle>
+                  <CardDescription>View various reports and insights.</CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-4">
+                  <div className="flex items-center justify-between rounded-md border p-4">
+                    <div className="flex items-center gap-3">
+                      <FileText className="h-6 w-6 text-blue-500" />
+                      <div>
+                        <h3 className="font-medium">Sales Report</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Generate a detailed sales report for a custom period.
+                        </p>
+                      </div>
+                    </div>
+                    <Button>Generate</Button>
+                  </div>
+                  <div className="flex items-center justify-between rounded-md border p-4">
+                    <div className="flex items-center gap-3">
+                      <Users className="h-6 w-6 text-green-500" />
+                      <div>
+                        <h3 className="font-medium">User Activity Report</h3>
+                        <p className="text-sm text-muted-foreground">Analyze user engagement and activity patterns.</p>
+                      </div>
+                    </div>
+                    <Button>Generate</Button>
+                  </div>
+                  <div className="flex items-center justify-between rounded-md border p-4">
+                    <div className="flex items-center gap-3">
+                      <Package className="h-6 w-6 text-purple-500" />
+                      <div>
+                        <h3 className="font-medium">Product Performance</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Review top-selling and underperforming products.
+                        </p>
+                      </div>
+                    </div>
+                    <Button>Generate</Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </main>
+      </div>
     </div>
   )
 }
