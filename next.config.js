@@ -7,11 +7,11 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
-    domains: ["placeholder.svg"],
+    domains: ["placeholder.svg", "images.unsplash.com", "via.placeholder.com"],
     unoptimized: true,
   },
-  experimental: {
-    appDir: true,
+  env: {
+    CUSTOM_KEY: process.env.CUSTOM_KEY,
   },
 }
 
