@@ -7,11 +7,29 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
-    domains: ["placeholder.svg", "images.unsplash.com", "via.placeholder.com"],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "via.placeholder.com",
+      },
+      {
+        protocol: "https",
+        hostname: "picsum.photos",
+      },
+      {
+        protocol: "https",
+        hostname: "source.unsplash.com",
+      },
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+      },
+      {
+        protocol: "https",
+        hostname: "v0.dev", // For v0's placeholder service
+      },
+    ],
     unoptimized: true,
-  },
-  env: {
-    CUSTOM_KEY: process.env.CUSTOM_KEY,
   },
 }
 

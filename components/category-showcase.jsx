@@ -1,122 +1,111 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Palette, Scissors, Hammer, Sparkles, Home, Gift } from "lucide-react"
+"use client"
+
 import Link from "next/link"
+import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { ArrowRight } from "lucide-react"
+import Image from "next/image"
+
+const categories = [
+  {
+    name: "Home Decor",
+    slug: "home-decor",
+    description: "Beautiful handcrafted items to make your house a home",
+    image: "/placeholder.svg?height=300&width=400",
+    itemCount: "150+ items",
+  },
+  {
+    name: "Jewelry",
+    slug: "jewelry",
+    description: "Unique, handmade jewelry pieces that tell your story",
+    image: "/placeholder.svg?height=300&width=400",
+    itemCount: "200+ items",
+  },
+  {
+    name: "Art Collection",
+    slug: "art-collection",
+    description: "Original artwork from talented artists worldwide",
+    image: "/placeholder.svg?height=300&width=400",
+    itemCount: "80+ items",
+  },
+  {
+    name: "Kitchen",
+    slug: "kitchen",
+    description: "Handcrafted kitchenware for the culinary enthusiast",
+    image: "/placeholder.svg?height=300&width=400",
+    itemCount: "120+ items",
+  },
+  {
+    name: "Clothing",
+    slug: "clothing",
+    description: "Handmade clothing and accessories with character",
+    image: "/placeholder.svg?height=300&width=400",
+    itemCount: "90+ items",
+  },
+  {
+    name: "Gifts",
+    slug: "gifts",
+    description: "Perfect handcrafted gifts for every occasion",
+    image: "/placeholder.svg?height=300&width=400",
+    itemCount: "180+ items",
+  },
+]
 
 export default function CategoryShowcase() {
-  const categories = [
-    {
-      id: 1,
-      name: "Pottery & Ceramics",
-      description: "Handthrown bowls, vases, and decorative pieces",
-      icon: Palette,
-      itemCount: 245,
-      image: "/placeholder.svg?height=200&width=300",
-      color: "bg-terracotta-100 text-terracotta-700",
-    },
-    {
-      id: 2,
-      name: "Textiles & Fiber",
-      description: "Woven fabrics, knitted items, and embroidery",
-      icon: Scissors,
-      itemCount: 189,
-      image: "/placeholder.svg?height=200&width=300",
-      color: "bg-sage-100 text-sage-700",
-    },
-    {
-      id: 3,
-      name: "Woodworking",
-      description: "Furniture, cutting boards, and carved sculptures",
-      icon: Hammer,
-      itemCount: 156,
-      image: "/placeholder.svg?height=200&width=300",
-      color: "bg-amber-100 text-amber-700",
-    },
-    {
-      id: 4,
-      name: "Jewelry & Accessories",
-      description: "Handmade rings, necklaces, and unique accessories",
-      icon: Sparkles,
-      itemCount: 312,
-      image: "/placeholder.svg?height=200&width=300",
-      color: "bg-purple-100 text-purple-700",
-    },
-    {
-      id: 5,
-      name: "Home Decor",
-      description: "Candles, wall art, and decorative objects",
-      icon: Home,
-      itemCount: 198,
-      image: "/placeholder.svg?height=200&width=300",
-      color: "bg-blue-100 text-blue-700",
-    },
-    {
-      id: 6,
-      name: "Gifts & Seasonal",
-      description: "Holiday items, personalized gifts, and more",
-      icon: Gift,
-      itemCount: 134,
-      image: "/placeholder.svg?height=200&width=300",
-      color: "bg-pink-100 text-pink-700",
-    },
-  ]
-
   return (
     <section className="py-16 bg-white">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <h2 className="text-3xl lg:text-4xl font-bold text-sage-900 mb-4">Shop by Category</h2>
+          <h2 className="text-3xl lg:text-4xl font-bold text-sage-900 mb-4">Explore Our Categories</h2>
           <p className="text-lg text-sage-600 max-w-2xl mx-auto">
-            Explore our diverse collection of handcrafted items across various artistic disciplines
+            Discover unique handcrafted items across various categories, each piece telling its own story
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-          {categories.map((category) => {
-            const IconComponent = category.icon
-            return (
-              <Card
-                key={category.id}
-                className="group hover:shadow-lg transition-all duration-300 border-sage-200 overflow-hidden"
-              >
-                <CardContent className="p-0">
-                  <div className="relative">
-                    <img
-                      src={category.image || "/placeholder.svg"}
-                      alt={category.name}
-                      className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                    <div className="absolute bottom-4 left-4 text-white">
-                      <div
-                        className={`inline-flex items-center justify-center w-10 h-10 rounded-full ${category.color} mb-2`}
-                      >
-                        <IconComponent className="w-5 h-5" />
-                      </div>
-                      <h3 className="text-lg font-semibold">{category.name}</h3>
-                      <p className="text-sm opacity-90">{category.itemCount} items</p>
-                    </div>
-                  </div>
-
-                  <div className="p-4">
-                    <p className="text-sage-600 text-sm mb-4">{category.description}</p>
-                    <Button
-                      asChild
-                      variant="outline"
-                      className="w-full border-sage-300 text-sage-700 hover:bg-sage-50 bg-transparent"
-                    >
-                      <Link href={`/category/${category.id}`}>Browse {category.name}</Link>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {categories.map((category, index) => (
+            <Card
+              key={category.slug}
+              className="group overflow-hidden border-sage-200 hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+            >
+              <div className="relative h-48 overflow-hidden">
+                <Image
+                  src={category.image || "/placeholder.svg"}
+                  alt={category.name}
+                  fill
+                  style={{ objectFit: "cover" }}
+                  className="group-hover:scale-105 transition-transform duration-300"
+                />
+                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300" />
+                <div className="absolute top-4 right-4">
+                  <span className="bg-white/90 text-sage-800 px-3 py-1 rounded-full text-sm font-medium">
+                    {category.itemCount}
+                  </span>
+                </div>
+              </div>
+              <CardContent className="p-6">
+                <h3 className="text-xl font-semibold text-sage-900 mb-2 group-hover:text-terracotta-600 transition-colors">
+                  {category.name}
+                </h3>
+                <p className="text-sage-600 mb-4 leading-relaxed">{category.description}</p>
+                <Button
+                  asChild
+                  variant="ghost"
+                  className="p-0 h-auto text-terracotta-600 hover:text-terracotta-700 font-medium group/button"
+                >
+                  <Link href={`/browse?category=${category.slug}`} className="flex items-center gap-2">
+                    Shop {category.name}
+                    <ArrowRight className="w-4 h-4 group-hover/button:translate-x-1 transition-transform" />
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
-        <div className="text-center">
+        <div className="text-center mt-12">
           <Button asChild size="lg" className="bg-terracotta-600 hover:bg-terracotta-700 text-white">
-            <Link href="/categories">View All Categories</Link>
+            <Link href="/browse">View All Categories</Link>
           </Button>
         </div>
       </div>

@@ -1,9 +1,11 @@
 import Header from "@/components/header"
 import Footer from "@/components/footer"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Heart, Users, Leaf, Award, Target, Eye, Globe } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
+import { Separator } from "@/components/ui/separator"
 
 const values = [
   {
@@ -109,7 +111,7 @@ export default function AboutPage() {
     <div className="min-h-screen bg-cream-50">
       <Header />
 
-      <main>
+      <main className="container mx-auto px-4 py-8">
         {/* Hero Section */}
         <section className="bg-gradient-to-br from-sage-50 to-terracotta-50 py-16 lg:py-24">
           <div className="container mx-auto px-4">
@@ -137,6 +139,91 @@ export default function AboutPage() {
               </div>
             </div>
           </div>
+        </section>
+
+        {/* About Handcrafted Haven */}
+        <section className="text-center mb-12">
+          <h1 className="text-5xl font-extrabold text-sage-900 mb-4">About Handcrafted Haven</h1>
+          <p className="text-xl text-sage-700 max-w-3xl mx-auto">
+            Discover the beauty of unique, handmade creations and connect directly with the artisans who pour their
+            heart and soul into every piece.
+          </p>
+        </section>
+
+        {/* Our Story */}
+        <section className="grid md:grid-cols-2 gap-12 items-center mb-12">
+          <div className="relative w-full h-80 rounded-lg overflow-hidden shadow-lg">
+            <Image
+              src="/placeholder.svg?height=600&width=800"
+              alt="Artisan working on a craft"
+              fill
+              style={{ objectFit: "cover" }}
+            />
+          </div>
+          <div>
+            <h2 className="text-4xl font-bold text-sage-900 mb-4">Our Story</h2>
+            <p className="text-lg text-sage-700 leading-relaxed">
+              Handcrafted Haven was born from a passion for authentic craftsmanship and a desire to support independent
+              artisans. In a world of mass production, we believe in the value of unique, handmade items that tell a
+              story. Our platform provides a space for talented creators to share their work with a global audience,
+              fostering a community built on creativity, quality, and connection.
+            </p>
+          </div>
+        </section>
+
+        {/* Separator */}
+        <Separator className="my-12 bg-sage-200" />
+
+        {/* Our Mission */}
+        <section className="mb-12">
+          <h2 className="text-4xl font-bold text-sage-900 mb-8 text-center">Our Mission</h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            <Card className="text-center p-6 shadow-md">
+              <CardHeader>
+                <CardTitle className="text-2xl font-semibold text-terracotta-600">Empower Artisans</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sage-700">
+                  Provide a robust platform for creators to showcase, sell, and grow their handcrafted businesses
+                  without high fees or complex setups.
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="text-center p-6 shadow-md">
+              <CardHeader>
+                <CardTitle className="text-2xl font-semibold text-terracotta-600">Inspire Discovery</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sage-700">
+                  Offer a curated marketplace where buyers can easily find unique, high-quality handmade goods that
+                  resonate with their personal style.
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="text-center p-6 shadow-md">
+              <CardHeader>
+                <CardTitle className="text-2xl font-semibold text-terracotta-600">Foster Community</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sage-700">
+                  Build a vibrant community around craftsmanship, connecting makers with enthusiasts and promoting
+                  sustainable, ethical consumption.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
+
+        {/* Separator */}
+        <Separator className="my-12 bg-sage-200" />
+
+        {/* Join Our Journey */}
+        <section className="text-center mb-12">
+          <h2 className="text-4xl font-bold text-sage-900 mb-4">Join Our Journey</h2>
+          <p className="text-lg text-sage-700 max-w-3xl mx-auto">
+            Whether you're an artisan looking for a home for your creations or a buyer seeking something truly special,
+            Handcrafted Haven is your destination.
+          </p>
         </section>
 
         {/* Stats Section */}

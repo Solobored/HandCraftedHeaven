@@ -5,6 +5,7 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+.pnpm-store/
 
 # Next.js build output
 .next/
@@ -21,7 +22,7 @@ dist/
 .env.*.local
 
 # Vercel deployment files
-.vercel
+.vercel/
 
 # TypeScript (even though we're using JSX, some tools might generate these)
 *.tsbuildinfo
@@ -81,9 +82,6 @@ jspm_packages/
 # parcel-bundler cache (https://parceljs.org/)
 .cache
 .parcel-cache
-
-# next.js build output
-.next
 
 # nuxt.js build output
 .nuxt
@@ -186,3 +184,6 @@ docs/build/
 design/temp/
 *.sketch.backup
 *.fig.backup
+
+# Supabase
+supabase/

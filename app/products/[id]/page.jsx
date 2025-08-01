@@ -1,286 +1,174 @@
 "use client"
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Star, Heart, Share2, ShoppingCart, Truck, Shield, Plus, Minus } from "lucide-react"
 import Link from "next/link"
-import Header from "@/components/header"
-import Footer from "@/components/footer"
-
-// Mock product data - in real app this would come from API
-const mockProduct = {
-  id: 1,
-  name: "Handwoven Ceramic Bowl Set",
-  seller: {
-    name: "Maria's Ceramics",
-    avatar: "/placeholder.svg?height=60&width=60",
-    rating: 4.9,
-    location: "Santa Fe, NM",
-    joinDate: "2022",
-  },
-  price: 89,
-  originalPrice: 120,
-  rating: 4.8,
-  reviewCount: 47,
-  images: [
-    "/placeholder.svg?height=500&width=500",
-    "/placeholder.svg?height=500&width=500",
-    "/placeholder.svg?height=500&width=500",
-    "/placeholder.svg?height=500&width=500",
-  ],
-  category: "Pottery & Ceramics",
-  description:
-    "Beautiful handwoven ceramic bowl set crafted with traditional techniques passed down through generations. Each piece is unique and tells its own story through subtle variations in color and texture.",
-  features: [
-    "Set of 4 bowls in varying sizes",
-    "Food-safe ceramic glaze",
-    "Microwave and dishwasher safe",
-    "Handcrafted in Santa Fe, NM",
-    "Each piece is unique",
-  ],
-  specifications: {
-    Material: "High-fire ceramic",
-    Dimensions: 'Large: 8" diameter, Small: 6" diameter',
-    Weight: "3.2 lbs total",
-    Care: "Dishwasher safe, avoid extreme temperature changes",
-  },
-  inStock: true,
-  stockCount: 12,
-  shippingTime: "3-5 business days",
-  returnPolicy: "30-day return policy",
-}
+import { useState, useEffect } from "react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
+import { useCart } from "@/contexts/cart-context"
+import { toast } from "@/hooks/use-toast"
+import Image from "next/image"
+import { Label, Input } from "@/components/ui/input"
 
 export default function ProductDetailPage({ params }) {
-  const [selectedImage, setSelectedImage] = useState(0)
+  const { id } = params
+  const [product, setProduct] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [quantity, setQuantity] = useState(1)
-  const [isWishlisted, setIsWishlisted] = useState(false)
+  const { addToCart } = useCart()
+
+  useEffect(() => {
+    const fetchProduct = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const res = await fetch(`/api/products/${id}`)
+        if (!res.ok) {
+          if (res.status === 404) {
+            throw new Error("Product not found.")
+          }
+          throw new Error("Failed to fetch product details.")
+        }
+        const data = await res.json()
+        setProduct(data)
+      } catch (err) {
+        setError(err.message)
+        toast({
+          title: "Error",
+          description: err.message,
+          variant: "destructive",
+        })
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (id) {
+      fetchProduct()
+    }
+  }, [id])
 
   const handleAddToCart = () => {
-    console.log(`Added ${quantity} items to cart`)
-    // Add to cart logic here
-  }
-
-  const handleQuantityChange = (change) => {
-    const newQuantity = quantity + change
-    if (newQuantity >= 1 && newQuantity <= mockProduct.stockCount) {
-      setQuantity(newQuantity)
+    if (product) {
+      addToCart(product, quantity)
     }
   }
 
-  return (
-    <div className="min-h-screen bg-cream-50">
-      <Header />
-
-      <main className="container mx-auto px-4 py-8">
-        {/* Breadcrumb */}
-        <nav className="flex items-center space-x-2 text-sm text-sage-600 mb-6">
-          <Link href="/" className="hover:text-sage-800">
-            Home
-          </Link>
-          <span>/</span>
-          <Link href="/categories" className="hover:text-sage-800">
-            Categories
-          </Link>
-          <span>/</span>
-          <Link href={`/categories/${mockProduct.category}`} className="hover:text-sage-800">
-            {mockProduct.category}
-          </Link>
-          <span>/</span>
-          <span className="text-sage-800">{mockProduct.name}</span>
-        </nav>
-
-        <div className="grid lg:grid-cols-2 gap-12">
-          {/* Product Images */}
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-4xl font-bold text-sage-900 mb-8">Loading Product...</h1>
+        {/* Basic skeleton for loading state */}
+        <div className="grid md:grid-cols-2 gap-8">
+          <div className="w-full h-96 bg-gray-200 rounded-lg animate-pulse"></div>
           <div className="space-y-4">
-            <div className="aspect-square bg-white rounded-lg overflow-hidden shadow-sm">
-              <img
-                src={mockProduct.images[selectedImage] || "/placeholder.svg"}
-                alt={mockProduct.name}
-                className="w-full h-full object-cover"
-              />
-            </div>
-
-            <div className="grid grid-cols-4 gap-2">
-              {mockProduct.images.map((image, index) => (
-                <button
-                  key={index}
-                  onClick={() => setSelectedImage(index)}
-                  className={`aspect-square bg-white rounded-lg overflow-hidden border-2 transition-colors ${
-                    selectedImage === index ? "border-terracotta-500" : "border-sage-200 hover:border-sage-300"
-                  }`}
-                >
-                  <img
-                    src={image || "/placeholder.svg"}
-                    alt={`${mockProduct.name} view ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Product Info */}
-          <div className="space-y-6">
-            <div>
-              <Badge className="bg-terracotta-100 text-terracotta-800 mb-2">{mockProduct.category}</Badge>
-              <h1 className="text-3xl font-bold text-sage-900 mb-2">{mockProduct.name}</h1>
-
-              <div className="flex items-center space-x-4 mb-4">
-                <div className="flex items-center">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`w-4 h-4 ${
-                        i < Math.floor(mockProduct.rating) ? "fill-amber-400 text-amber-400" : "text-sage-300"
-                      }`}
-                    />
-                  ))}
-                  <span className="ml-2 text-sm font-medium text-sage-700">{mockProduct.rating}</span>
-                </div>
-                <span className="text-sm text-sage-600">({mockProduct.reviewCount} reviews)</span>
-              </div>
-
-              <div className="flex items-center space-x-3 mb-6">
-                <span className="text-3xl font-bold text-sage-900">${mockProduct.price}</span>
-                {mockProduct.originalPrice && (
-                  <span className="text-xl text-sage-500 line-through">${mockProduct.originalPrice}</span>
-                )}
-                {mockProduct.originalPrice && (
-                  <Badge className="bg-green-100 text-green-800">
-                    Save ${mockProduct.originalPrice - mockProduct.price}
-                  </Badge>
-                )}
-              </div>
-            </div>
-
-            {/* Seller Info */}
-            <Card className="border-sage-200">
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-3">
-                  <img
-                    src={mockProduct.seller.avatar || "/placeholder.svg"}
-                    alt={mockProduct.seller.name}
-                    className="w-12 h-12 rounded-full object-cover"
-                  />
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-sage-900">{mockProduct.seller.name}</h3>
-                    <div className="flex items-center space-x-2 text-sm text-sage-600">
-                      <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                      <span>{mockProduct.seller.rating}</span>
-                      <span>•</span>
-                      <span>{mockProduct.seller.location}</span>
-                      <span>•</span>
-                      <span>Since {mockProduct.seller.joinDate}</span>
-                    </div>
-                  </div>
-                  <Button variant="outline" size="sm" className="border-sage-300 text-sage-700 bg-transparent">
-                    Visit Shop
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Purchase Options */}
-            <div className="space-y-4">
-              <div className="flex items-center space-x-4">
-                <span className="text-sm font-medium text-sage-700">Quantity:</span>
-                <div className="flex items-center border border-sage-300 rounded-md">
-                  <button
-                    onClick={() => handleQuantityChange(-1)}
-                    className="p-2 hover:bg-sage-50 transition-colors"
-                    disabled={quantity <= 1}
-                  >
-                    <Minus className="w-4 h-4" />
-                  </button>
-                  <span className="px-4 py-2 border-x border-sage-300">{quantity}</span>
-                  <button
-                    onClick={() => handleQuantityChange(1)}
-                    className="p-2 hover:bg-sage-50 transition-colors"
-                    disabled={quantity >= mockProduct.stockCount}
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
-                </div>
-                <span className="text-sm text-sage-600">{mockProduct.stockCount} available</span>
-              </div>
-
-              <div className="flex space-x-3">
-                <Button
-                  onClick={handleAddToCart}
-                  className="flex-1 bg-terracotta-600 hover:bg-terracotta-700 text-white"
-                  size="lg"
-                >
-                  <ShoppingCart className="w-4 h-4 mr-2" />
-                  Add to Cart
-                </Button>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  onClick={() => setIsWishlisted(!isWishlisted)}
-                  className={`border-sage-300 ${isWishlisted ? "text-red-600 border-red-300" : "text-sage-700"}`}
-                >
-                  <Heart className={`w-4 h-4 ${isWishlisted ? "fill-red-600" : ""}`} />
-                </Button>
-                <Button variant="outline" size="lg" className="border-sage-300 text-sage-700 bg-transparent">
-                  <Share2 className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-
-            {/* Shipping & Returns */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-center space-x-3 p-3 bg-sage-50 rounded-lg">
-                <Truck className="w-5 h-5 text-sage-600" />
-                <div>
-                  <p className="text-sm font-medium text-sage-900">Free Shipping</p>
-                  <p className="text-xs text-sage-600">{mockProduct.shippingTime}</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-3 p-3 bg-sage-50 rounded-lg">
-                <Shield className="w-5 h-5 text-sage-600" />
-                <div>
-                  <p className="text-sm font-medium text-sage-900">Easy Returns</p>
-                  <p className="text-xs text-sage-600">{mockProduct.returnPolicy}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Product Description */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-sage-900">Description</h3>
-              <p className="text-sage-700 leading-relaxed">{mockProduct.description}</p>
-
-              <div>
-                <h4 className="font-medium text-sage-900 mb-2">Features:</h4>
-                <ul className="space-y-1">
-                  {mockProduct.features.map((feature, index) => (
-                    <li key={index} className="text-sm text-sage-700 flex items-center">
-                      <span className="w-1.5 h-1.5 bg-terracotta-500 rounded-full mr-2"></span>
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-medium text-sage-900 mb-2">Specifications:</h4>
-                <dl className="grid grid-cols-1 gap-2">
-                  {Object.entries(mockProduct.specifications).map(([key, value]) => (
-                    <div key={key} className="flex justify-between text-sm">
-                      <dt className="text-sage-600">{key}:</dt>
-                      <dd className="text-sage-900 font-medium">{value}</dd>
-                    </div>
-                  ))}
-                </dl>
-              </div>
-            </div>
+            <div className="h-8 bg-gray-200 rounded w-3/4 animate-pulse"></div>
+            <div className="h-6 bg-gray-200 rounded w-1/2 animate-pulse"></div>
+            <div className="h-10 bg-gray-200 rounded w-1/4 animate-pulse"></div>
+            <div className="h-4 bg-gray-200 rounded w-full animate-pulse"></div>
+            <div className="h-4 bg-gray-200 rounded w-5/6 animate-pulse"></div>
+            <div className="h-12 bg-gray-200 rounded w-full animate-pulse"></div>
           </div>
         </div>
-      </main>
+      </div>
+    )
+  }
 
-      <Footer />
-    </div>
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8 text-red-600">
+        <h1 className="text-4xl font-bold mb-8">Error</h1>
+        <p>{error}</p>
+      </div>
+    )
+  }
+
+  if (!product) {
+    return (
+      <div className="container mx-auto px-4 py-8 text-sage-600">
+        <h1 className="text-4xl font-bold mb-8">Product Not Found</h1>
+        <p>The product you are looking for does not exist.</p>
+      </div>
+    )
+  }
+
+  return (
+    <main className="container mx-auto px-4 py-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="relative w-full h-[400px] md:h-[500px] rounded-lg overflow-hidden shadow-lg">
+          <Image
+            src={product.image_url || "/placeholder.svg?height=500&width=500&query=product+detail+image"}
+            alt={product.name}
+            layout="fill"
+            objectFit="contain"
+            className="bg-sage-50" // Add a background for contain images
+          />
+        </div>
+
+        <div className="flex flex-col justify-between">
+          <div>
+            <Badge
+              variant="secondary"
+              className="bg-terracotta-100 text-terracotta-700 px-3 py-1 rounded-full text-sm mb-2"
+            >
+              {product.categories?.name || "Uncategorized"}
+            </Badge>
+            <h1 className="text-4xl font-bold text-sage-900 mb-2">{product.name}</h1>
+            <p className="text-sage-600 text-lg mb-4">by {product.users?.seller_name || "Unknown Seller"}</p>
+            <p className="text-5xl font-extrabold text-terracotta-600 mb-6">${product.price.toFixed(2)}</p>
+
+            <p className="text-sage-700 leading-relaxed mb-6">{product.description}</p>
+
+            <Separator className="my-6 bg-sage-200" />
+
+            <div className="flex items-center gap-4 mb-6">
+              <Label htmlFor="quantity" className="text-lg text-sage-800">
+                Quantity:
+              </Label>
+              <Input
+                id="quantity"
+                type="number"
+                min="1"
+                max={product.stock}
+                value={quantity}
+                onChange={(e) =>
+                  setQuantity(Math.max(1, Math.min(product.stock, Number.parseInt(e.target.value) || 1)))
+                }
+                className="w-24 text-center border-sage-300 focus:border-terracotta-400"
+              />
+              <span className="text-sage-600 text-sm">({product.stock} in stock)</span>
+            </div>
+
+            <Button
+              className="w-full bg-sage-700 hover:bg-sage-800 text-white text-lg py-3"
+              onClick={handleAddToCart}
+              disabled={product.stock === 0}
+            >
+              {product.stock === 0 ? "Out of Stock" : "Add to Cart"}
+            </Button>
+          </div>
+
+          <Card className="mt-8 p-6 shadow-md bg-sage-50">
+            <CardHeader className="p-0 mb-4">
+              <CardTitle className="text-xl font-semibold text-sage-900">Seller Information</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <p className="text-sage-700">
+                Visit{" "}
+                <Link
+                  href={`/sellers/${product.seller_id}`}
+                  className="text-terracotta-600 hover:underline font-medium"
+                >
+                  {product.users?.seller_name || "Unknown Seller"}'s Shop
+                </Link>{" "}
+                for more unique items.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </main>
   )
 }

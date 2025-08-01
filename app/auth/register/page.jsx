@@ -2,224 +2,156 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { signIn } from "next-auth/react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Eye, EyeOff, Mail, Lock, User, ArrowLeft } from "lucide-react"
+import { toast } from "@/hooks/use-toast"
+import { Chrome, ArrowLeft } from "lucide-react"
+import Header from "@/components/header"
+import Footer from "@/components/footer"
 
 export default function RegisterPage() {
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    accountType: "buyer",
-  })
-  const [isLoading, setIsLoading] = useState(false)
+  const [name, setName] = useState("")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [loading, setLoading] = useState(false)
+  const router = useRouter()
 
-  const handleSubmit = async (e) => {
+  const handleEmailRegister = async (e) => {
     e.preventDefault()
-    setIsLoading(true)
+    setLoading(true)
 
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false)
-      console.log("Registration attempt:", formData)
-    }, 1000)
+    try {
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name, email, password }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Registration failed")
+      }
+
+      toast({
+        title: "Registration Successful",
+        description: "Welcome to Handcrafted Haven! You can now sign in.",
+      })
+
+      // Redirect to dashboard instead of login
+      router.push("/dashboard")
+    } catch (error) {
+      toast({
+        title: "Registration Failed",
+        description: error.message,
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const handleInputChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    })
+  const handleOAuthLogin = async (provider) => {
+    setLoading(true)
+    await signIn(provider, { callbackUrl: "/dashboard" })
+    setLoading(false)
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sage-50 to-cream-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <Link href="/" className="inline-flex items-center text-sage-600 hover:text-sage-800 mb-6 transition-colors">
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Handcrafted Haven
-        </Link>
+    <div className="min-h-screen bg-cream-50">
+      <Header />
 
-        <Card className="shadow-lg border-sage-200">
+      <div className="flex items-center justify-center min-h-[calc(100vh-200px)] py-12 px-4 sm:px-6 lg:px-8">
+        <Card className="w-full max-w-md space-y-8 p-8 shadow-lg">
           <CardHeader className="text-center">
-            <div className="w-16 h-16 bg-terracotta-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-white font-bold text-xl">HH</span>
+            <div className="flex items-center justify-center mb-4">
+              <Button variant="ghost" size="sm" onClick={() => router.push("/")} className="absolute left-4 top-4">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Home
+              </Button>
             </div>
-            <CardTitle className="text-2xl font-bold text-sage-900">Join Our Community</CardTitle>
-            <CardDescription className="text-sage-600">Create your Handcrafted Haven account</CardDescription>
+            <CardTitle className="text-3xl font-bold text-sage-900">Create Your Account</CardTitle>
+            <CardDescription className="mt-2 text-sage-600">
+              Already have an account?{" "}
+              <Link href="/auth/login" className="font-medium text-terracotta-600 hover:text-terracotta-700">
+                Sign in
+              </Link>
+            </CardDescription>
           </CardHeader>
-
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label htmlFor="firstName" className="text-sm font-medium text-sage-700">
-                    First Name
-                  </label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sage-400 w-4 h-4" />
-                    <Input
-                      id="firstName"
-                      name="firstName"
-                      type="text"
-                      placeholder="First name"
-                      value={formData.firstName}
-                      onChange={handleInputChange}
-                      className="pl-10 border-sage-300 focus:border-terracotta-400"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label htmlFor="lastName" className="text-sm font-medium text-sage-700">
-                    Last Name
-                  </label>
-                  <Input
-                    id="lastName"
-                    name="lastName"
-                    type="text"
-                    placeholder="Last name"
-                    value={formData.lastName}
-                    onChange={handleInputChange}
-                    className="border-sage-300 focus:border-terracotta-400"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label htmlFor="email" className="text-sm font-medium text-sage-700">
-                  Email Address
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sage-400 w-4 h-4" />
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="Enter your email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className="pl-10 border-sage-300 focus:border-terracotta-400"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label htmlFor="accountType" className="text-sm font-medium text-sage-700">
-                  Account Type
-                </label>
-                <select
-                  id="accountType"
-                  name="accountType"
-                  value={formData.accountType}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-sage-300 rounded-md focus:border-terracotta-400 focus:ring-terracotta-400"
-                >
-                  <option value="buyer">Buyer - I want to purchase handcrafted items</option>
-                  <option value="seller">Seller - I want to sell my handcrafted items</option>
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <label htmlFor="password" className="text-sm font-medium text-sage-700">
-                  Password
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sage-400 w-4 h-4" />
-                  <Input
-                    id="password"
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Create a password"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    className="pl-10 pr-10 border-sage-300 focus:border-terracotta-400"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sage-400 hover:text-sage-600"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label htmlFor="confirmPassword" className="text-sm font-medium text-sage-700">
-                  Confirm Password
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sage-400 w-4 h-4" />
-                  <Input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type={showConfirmPassword ? "text" : "password"}
-                    placeholder="Confirm your password"
-                    value={formData.confirmPassword}
-                    onChange={handleInputChange}
-                    className="pl-10 pr-10 border-sage-300 focus:border-terracotta-400"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sage-400 hover:text-sage-600"
-                  >
-                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex items-start space-x-2">
-                <input
-                  id="terms"
-                  type="checkbox"
-                  className="mt-1 rounded border-sage-300 text-terracotta-600 focus:ring-terracotta-400"
+            <form className="mt-8 space-y-6" onSubmit={handleEmailRegister}>
+              <div>
+                <Label htmlFor="name">Full Name</Label>
+                <Input
+                  id="name"
+                  name="name"
+                  type="text"
+                  autoComplete="name"
                   required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="mt-1"
                 />
-                <label htmlFor="terms" className="text-sm text-sage-600 leading-relaxed">
-                  I agree to the{" "}
-                  <Link href="/terms" className="text-terracotta-600 hover:text-terracotta-700">
-                    Terms of Service
-                  </Link>{" "}
-                  and{" "}
-                  <Link href="/privacy" className="text-terracotta-600 hover:text-terracotta-700">
-                    Privacy Policy
-                  </Link>
-                </label>
               </div>
-
+              <div>
+                <Label htmlFor="email">Email address</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
               <Button
                 type="submit"
-                className="w-full bg-terracotta-600 hover:bg-terracotta-700 text-white"
-                disabled={isLoading}
+                className="w-full bg-terracotta-600 hover:bg-terracotta-700 text-white py-2 px-4 rounded-md text-lg"
+                disabled={loading}
               >
-                {isLoading ? "Creating Account..." : "Create Account"}
+                {loading ? "Registering..." : "Register"}
               </Button>
             </form>
 
-            <div className="mt-6 text-center">
-              <p className="text-sage-600">
-                Already have an account?{" "}
-                <Link href="/auth/login" className="text-terracotta-600 hover:text-terracotta-700 font-medium">
-                  Sign in
-                </Link>
-              </p>
+            <div className="mt-6 text-center text-sm text-sage-600">Or register with</div>
+
+            <div className="mt-4 space-y-3">
+              <Button
+                variant="outline"
+                className="w-full flex items-center justify-center gap-2 border-sage-300 text-sage-700 hover:bg-sage-100 bg-transparent"
+                onClick={() => handleOAuthLogin("google")}
+                disabled={loading}
+              >
+                <Chrome className="w-5 h-5" />
+                Sign up with Google
+              </Button>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      <Footer />
     </div>
   )
 }

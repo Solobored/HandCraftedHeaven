@@ -1,535 +1,322 @@
 "use client"
 
-import * as React from "react"
-import {
-  Activity,
-  CreditCard,
-  DollarSign,
-  Users,
-  Package,
-  FileText,
-  AlertCircle,
-  Clock,
-  MoreHorizontal,
-  ArrowUpRight,
-} from "lucide-react"
-
-import { Badge } from "@/components/ui/badge"
+import { useState, useEffect } from "react"
+import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Link } from "next/link"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
-import { Separator } from "@/components/ui/separator"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Trash2, Edit } from "lucide-react"
+import { toast } from "@/hooks/use-toast"
+import Header from "@/components/header"
+import Footer from "@/components/footer"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 
 export default function AdminPage() {
-  const [activeTab, setActiveTab] = React.useState("overview")
-  const [userSearch, setUserSearch] = React.useState("")
-  const [productSearch, setProductSearch] = React.useState("")
+  const { data: session, status } = useSession()
+  const router = useRouter()
+  const [stats, setStats] = useState(null)
+  const [users, setUsers] = useState([])
+  const [products, setProducts] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  // Dummy Data for Admin Dashboard
-  const stats = [
-    {
-      title: "Total Revenue",
-      value: "$45,231.89",
-      change: "+20.1% from last month",
-      icon: DollarSign,
-    },
-    {
-      title: "Subscriptions",
-      value: "+2350",
-      change: "+180.1% from last month",
-      icon: Users,
-    },
-    {
-      title: "Sales",
-      value: "+12,234",
-      change: "+19% from last month",
-      icon: CreditCard,
-    },
-    {
-      title: "Active Now",
-      value: "+573",
-      change: "+201 since last hour",
-      icon: Activity,
-    },
-  ]
+  useEffect(() => {
+    if (status === "loading") return // Do nothing while session is loading
 
-  const recentSales = [
-    {
-      customer: "Olivia Martin",
-      email: "olivia.martin@example.com",
-      amount: "+$1,999.00",
-    },
-    {
-      customer: "Jackson Lee",
-      email: "jackson.lee@example.com",
-      amount: "+$39.00",
-    },
-    {
-      customer: "Isabella Nguyen",
-      email: "isabella.nguyen@example.com",
-      amount: "+$299.00",
-    },
-    {
-      customer: "William Kim",
-      email: "will.kim@example.com",
-      amount: "+$99.00",
-    },
-    {
-      customer: "Sofia Davis",
-      email: "sofia.davis@example.com",
-      amount: "+$39.00",
-    },
-  ]
+    if (!session || session.user.role !== "admin") {
+      router.push("/auth/login") // Redirect to login if not admin
+      toast({
+        title: "Unauthorized",
+        description: "You do not have permission to access the admin panel.",
+        variant: "destructive",
+      })
+      return
+    }
 
-  const users = [
-    { id: "1", name: "Alice Smith", email: "alice@example.com", status: "Active", role: "Customer" },
-    { id: "2", name: "Bob Johnson", email: "bob@example.com", status: "Active", role: "Seller" },
-    { id: "3", name: "Charlie Brown", email: "charlie@example.com", status: "Suspended", role: "Customer" },
-    { id: "4", name: "Diana Prince", email: "diana@example.com", status: "Active", role: "Seller" },
-    { id: "5", name: "Eve Adams", email: "eve@example.com", status: "Pending", role: "Customer" },
-  ]
+    const fetchData = async () => {
+      try {
+        // Fetch stats
+        const statsRes = await fetch("/api/admin/stats")
+        if (!statsRes.ok) throw new Error("Failed to fetch stats")
+        const statsData = await statsRes.json()
+        setStats(statsData)
 
-  const productsData = [
-    { id: "p1", name: "Hand-painted Ceramic Mug", seller: "Artisan Crafts", status: "Active", stock: 15, sales: 120 },
-    { id: "p2", name: "Knitted Wool Scarf", seller: "Cozy Knits", status: "Pending Review", stock: 5, sales: 30 },
-    { id: "p3", name: "Custom Leather Wallet", seller: "Leather Works", status: "Active", stock: 20, sales: 80 },
-    { id: "p4", name: "Organic Soy Candle", seller: "Nature's Glow", status: "Reported", stock: 10, sales: 50 },
-    { id: "p5", name: "Handmade Silver Necklace", seller: "Jewel Craft", status: "Active", stock: 8, sales: 90 },
-  ]
+        // Fetch users
+        const usersRes = await fetch("/api/admin/users")
+        if (!usersRes.ok) throw new Error("Failed to fetch users")
+        const usersData = await usersRes.json()
+        setUsers(usersData)
 
-  const orders = [
-    {
-      id: "o1",
-      customer: "Alice Smith",
-      product: "Ceramic Mug",
-      amount: "$25.00",
-      status: "Completed",
-      date: "2023-10-26",
-    },
-    {
-      id: "o2",
-      customer: "Bob Johnson",
-      product: "Wool Scarf",
-      amount: "$45.00",
-      status: "Pending",
-      date: "2023-10-25",
-    },
-    {
-      id: "o3",
-      customer: "Charlie Brown",
-      product: "Leather Wallet",
-      amount: "$70.00",
-      status: "Cancelled",
-      date: "2023-10-24",
-    },
-    {
-      id: "o4",
-      customer: "Diana Prince",
-      product: "Soy Candle",
-      amount: "$18.00",
-      status: "Completed",
-      date: "2023-10-23",
-    },
-  ]
+        // Fetch products
+        const productsRes = await fetch("/api/products")
+        if (!productsRes.ok) throw new Error("Failed to fetch products")
+        const productsData = await productsRes.json()
+        setProducts(productsData)
+      } catch (err) {
+        setError(err.message)
+        toast({
+          title: "Error",
+          description: err.message,
+          variant: "destructive",
+        })
+      } finally {
+        setLoading(false)
+      }
+    }
 
-  const filteredUsers = users.filter(
-    (user) =>
-      user.name.toLowerCase().includes(userSearch.toLowerCase()) ||
-      user.email.toLowerCase().includes(userSearch.toLowerCase()),
-  )
+    fetchData()
+  }, [session, status, router])
 
-  const filteredProducts = productsData.filter(
-    (product) =>
-      product.name.toLowerCase().includes(productSearch.toLowerCase()) ||
-      product.seller.toLowerCase().includes(productSearch.toLowerCase()),
-  )
+  const handleDeleteProduct = async (productId) => {
+    if (!confirm("Are you sure you want to delete this product?")) return
+
+    try {
+      const res = await fetch(`/api/products/${productId}`, {
+        method: "DELETE",
+      })
+      if (!res.ok) throw new Error("Failed to delete product")
+
+      setProducts(products.filter((p) => p.id !== productId))
+      toast({
+        title: "Success",
+        description: "Product deleted successfully.",
+      })
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleEditProduct = (productId) => {
+    router.push(`/seller/dashboard/edit-product/${productId}`)
+  }
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-4xl font-bold text-sage-900 mb-8">Loading Admin Panel...</h1>
+        {/* You can add a more sophisticated loading skeleton here */}
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8 text-red-600">
+        <h1 className="text-4xl font-bold mb-8">Error Loading Admin Panel</h1>
+        <p>{error}</p>
+      </div>
+    )
+  }
 
   return (
-    <div className="flex min-h-screen w-full flex-col bg-muted/40">
-      <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-14">
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
-          <h1 className="text-2xl font-semibold">Admin Dashboard</h1>
-        </header>
-        <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-5">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="users">Users</TabsTrigger>
-              <TabsTrigger value="products">Products</TabsTrigger>
-              <TabsTrigger value="orders">Orders</TabsTrigger>
-              <TabsTrigger value="reports">Reports</TabsTrigger>
-            </TabsList>
+    <div className="min-h-screen bg-cream-50">
+      <Header />
 
-            {/* Overview Tab */}
-            <TabsContent value="overview" className="mt-4">
-              <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-                {stats.map((stat, index) => (
-                  <Card key={index}>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-                      <stat.icon className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{stat.value}</div>
-                      <p className="text-xs text-muted-foreground">{stat.change}</p>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-              <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3 mt-4">
-                <Card className="xl:col-span-2">
-                  <CardHeader className="flex flex-row items-center">
-                    <div className="grid gap-2">
-                      <CardTitle>Recent Sales</CardTitle>
-                      <CardDescription>You made 265 sales this month.</CardDescription>
-                    </div>
-                    <Button asChild size="sm" className="ml-auto gap-1">
-                      <Link href="#">
-                        View All
-                        <ArrowUpRight className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                  </CardHeader>
-                  <CardContent>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Customer</TableHead>
-                          <TableHead className="hidden xl:table-column">Type</TableHead>
-                          <TableHead className="hidden xl:table-column">Status</TableHead>
-                          <TableHead className="hidden md:table-column">Date</TableHead>
-                          <TableHead className="text-right">Amount</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {recentSales.map((sale, index) => (
-                          <TableRow key={index}>
-                            <TableCell>
-                              <div className="font-medium">{sale.customer}</div>
-                              <div className="hidden text-sm text-muted-foreground md:inline">{sale.email}</div>
-                            </TableCell>
-                            <TableCell className="hidden xl:table-column">Sale</TableCell>
-                            <TableCell className="hidden xl:table-column">
-                              <Badge className="text-xs" variant="outline">
-                                Approved
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="hidden md:table-column">2023-06-23</TableCell>
-                            <TableCell className="text-right">{sale.amount}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Pending Actions</CardTitle>
-                    <CardDescription>Items requiring your attention.</CardDescription>
-                  </CardHeader>
-                  <CardContent className="grid gap-4">
-                    <div className="flex items-center gap-4">
-                      <AlertCircle className="h-5 w-5 text-orange-500" />
-                      <div>
-                        <p className="font-medium">2 Products Pending Review</p>
-                        <p className="text-sm text-muted-foreground">New products awaiting approval.</p>
-                      </div>
-                      <Button variant="ghost" size="sm" className="ml-auto">
-                        Review
-                      </Button>
-                    </div>
-                    <Separator />
-                    <div className="flex items-center gap-4">
-                      <Clock className="h-5 w-5 text-blue-500" />
-                      <div>
-                        <p className="font-medium">1 Order Awaiting Shipment</p>
-                        <p className="text-sm text-muted-foreground">Order #12345 needs to be shipped.</p>
-                      </div>
-                      <Button variant="ghost" size="sm" className="ml-auto">
-                        Ship
-                      </Button>
-                    </div>
-                    <Separator />
-                    <div className="flex items-center gap-4">
-                      <Users className="h-5 w-5 text-purple-500" />
-                      <div>
-                        <p className="font-medium">1 User Pending Approval</p>
-                        <p className="text-sm text-muted-foreground">New seller account needs verification.</p>
-                      </div>
-                      <Button variant="ghost" size="sm" className="ml-auto">
-                        Approve
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
+      <main className="container mx-auto px-4 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl lg:text-4xl font-bold text-sage-900 mb-4">Admin Dashboard</h1>
+          <p className="text-lg text-sage-600">Manage users, products, and orders</p>
+        </div>
 
-            {/* Users Tab */}
-            <TabsContent value="users" className="mt-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>User Management</CardTitle>
-                  <CardDescription>Manage all registered users.</CardDescription>
-                  <div className="mt-4 flex items-center gap-2">
-                    <Input
-                      placeholder="Search users..."
-                      value={userSearch}
-                      onChange={(e) => setUserSearch(e.target.value)}
-                      className="max-w-sm"
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card className="border-sage-200">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-sage-600">Total Users</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-sage-900">{stats?.totalUsers || 0}</div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-sage-200">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-sage-600">Total Products</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-sage-900">{stats?.totalProducts || 0}</div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-sage-200">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-sage-600">Total Sales (Mock)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-sage-900">${(stats?.totalSales || 0).toFixed(2)}</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Tabs */}
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="users">Users</TabsTrigger>
+            <TabsTrigger value="products">Products</TabsTrigger>
+            <TabsTrigger value="site-settings">Site Settings</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="mt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <Card className="p-6">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats?.totalUsers || 0}</div>
+                </CardContent>
+              </Card>
+              <Card className="p-6">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Products</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats?.totalProducts || 0}</div>
+                </CardContent>
+              </Card>
+              <Card className="p-6">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Sales (Mock)</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">${(stats?.totalSales || 0).toFixed(2)}</div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="users" className="mt-6">
+            <h2 className="text-2xl font-bold text-sage-900 mb-4">User Management</h2>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {users.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell className="font-medium">{user.name || "N/A"}</TableCell>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>{user.role}</TableCell>
+                      <TableCell>
+                        {/* Add user actions here, e.g., change role, delete user */}
+                        <Button variant="outline" size="sm" className="mr-2 bg-transparent">
+                          Edit
+                        </Button>
+                        <Button variant="destructive" size="sm">
+                          Delete
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="products" className="mt-6">
+            <h2 className="text-2xl font-bold text-sage-900 mb-4">Product Management</h2>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Seller</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Price</TableHead>
+                    <TableHead>Stock</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {products.map((product) => (
+                    <TableRow key={product.id}>
+                      <TableCell className="font-medium">{product.name}</TableCell>
+                      <TableCell>{product.users?.seller_name || "N/A"}</TableCell>
+                      <TableCell>{product.categories?.name || "N/A"}</TableCell>
+                      <TableCell>${product.price.toFixed(2)}</TableCell>
+                      <TableCell>{product.stock}</TableCell>
+                      <TableCell>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="mr-2 bg-transparent"
+                          onClick={() => handleEditProduct(product.id)}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button variant="destructive" size="sm" onClick={() => handleDeleteProduct(product.id)}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="site-settings" className="mt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card className="p-6">
+                <CardHeader className="p-0 mb-4">
+                  <CardTitle className="text-lg font-semibold">Site Configuration</CardTitle>
+                </CardHeader>
+                <CardContent className="p-0 space-y-4">
+                  <div>
+                    <Label htmlFor="siteName">Site Name</Label>
+                    <Input id="siteName" defaultValue="Handcrafted Haven" />
+                  </div>
+                  <div>
+                    <Label htmlFor="siteDescription">Site Description</Label>
+                    <Textarea
+                      id="siteDescription"
+                      defaultValue="Discover unique handcrafted goods from talented artisans."
                     />
-                    <Button variant="outline">Add User</Button>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>ID</TableHead>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Role</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredUsers.map((user) => (
-                        <TableRow key={user.id}>
-                          <TableCell>{user.id}</TableCell>
-                          <TableCell>{user.name}</TableCell>
-                          <TableCell>{user.email}</TableCell>
-                          <TableCell>
-                            <Badge variant={user.status === "Active" ? "default" : "destructive"}>{user.status}</Badge>
-                          </TableCell>
-                          <TableCell>{user.role}</TableCell>
-                          <TableCell className="text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                  <span className="sr-only">Open menu</span>
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <DropdownMenuItem>Edit</DropdownMenuItem>
-                                <DropdownMenuItem>Suspend</DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem>Delete</DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                  <Button className="bg-terracotta-600 hover:bg-terracotta-700">Save Settings</Button>
                 </CardContent>
               </Card>
-            </TabsContent>
 
-            {/* Products Tab */}
-            <TabsContent value="products" className="mt-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Product Management</CardTitle>
-                  <CardDescription>Manage all products on the platform.</CardDescription>
-                  <div className="mt-4 flex items-center gap-2">
-                    <Input
-                      placeholder="Search products..."
-                      value={productSearch}
-                      onChange={(e) => setProductSearch(e.target.value)}
-                      className="max-w-sm"
-                    />
-                    <Button variant="outline">Add Product</Button>
-                  </div>
+              <Card className="p-6">
+                <CardHeader className="p-0 mb-4">
+                  <CardTitle className="text-lg font-semibold">Featured Content</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>ID</TableHead>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Seller</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Stock</TableHead>
-                        <TableHead>Sales</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredProducts.map((product) => (
-                        <TableRow key={product.id}>
-                          <TableCell>{product.id}</TableCell>
-                          <TableCell>{product.name}</TableCell>
-                          <TableCell>{product.seller}</TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={
-                                product.status === "Active"
-                                  ? "default"
-                                  : product.status === "Pending Review"
-                                    ? "secondary"
-                                    : "destructive"
-                              }
-                            >
-                              {product.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{product.stock}</TableCell>
-                          <TableCell>{product.sales}</TableCell>
-                          <TableCell className="text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                  <span className="sr-only">Open menu</span>
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <DropdownMenuItem>View Details</DropdownMenuItem>
-                                <DropdownMenuItem>Edit</DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem>Approve</DropdownMenuItem>
-                                <DropdownMenuItem>Reject</DropdownMenuItem>
-                                <DropdownMenuItem>Delete</DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
+                <CardContent className="p-0 space-y-4">
+                  <div>
+                    <Label>Featured Categories</Label>
+                    <div className="space-y-2 mt-2">
+                      {["Home Decor", "Jewelry", "Art Collection"].map((category) => (
+                        <label key={category} className="flex items-center space-x-2">
+                          <input type="checkbox" defaultChecked />
+                          <span>{category}</span>
+                        </label>
                       ))}
-                    </TableBody>
-                  </Table>
+                    </div>
+                  </div>
+                  <Button className="bg-terracotta-600 hover:bg-terracotta-700">Update Featured</Button>
                 </CardContent>
               </Card>
-            </TabsContent>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </main>
 
-            {/* Orders Tab */}
-            <TabsContent value="orders" className="mt-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Order Management</CardTitle>
-                  <CardDescription>Track and manage all customer orders.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Order ID</TableHead>
-                        <TableHead>Customer</TableHead>
-                        <TableHead>Product</TableHead>
-                        <TableHead>Amount</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {orders.map((order) => (
-                        <TableRow key={order.id}>
-                          <TableCell>{order.id}</TableCell>
-                          <TableCell>{order.customer}</TableCell>
-                          <TableCell>{order.product}</TableCell>
-                          <TableCell>{order.amount}</TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={
-                                order.status === "Completed"
-                                  ? "default"
-                                  : order.status === "Pending"
-                                    ? "secondary"
-                                    : "destructive"
-                              }
-                            >
-                              {order.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{order.date}</TableCell>
-                          <TableCell className="text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                  <span className="sr-only">Open menu</span>
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <DropdownMenuItem>View Details</DropdownMenuItem>
-                                <DropdownMenuItem>Update Status</DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem>Refund</DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Reports Tab */}
-            <TabsContent value="reports" className="mt-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Reports & Analytics</CardTitle>
-                  <CardDescription>View various reports and insights.</CardDescription>
-                </CardHeader>
-                <CardContent className="grid gap-4">
-                  <div className="flex items-center justify-between rounded-md border p-4">
-                    <div className="flex items-center gap-3">
-                      <FileText className="h-6 w-6 text-blue-500" />
-                      <div>
-                        <h3 className="font-medium">Sales Report</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Generate a detailed sales report for a custom period.
-                        </p>
-                      </div>
-                    </div>
-                    <Button>Generate</Button>
-                  </div>
-                  <div className="flex items-center justify-between rounded-md border p-4">
-                    <div className="flex items-center gap-3">
-                      <Users className="h-6 w-6 text-green-500" />
-                      <div>
-                        <h3 className="font-medium">User Activity Report</h3>
-                        <p className="text-sm text-muted-foreground">Analyze user engagement and activity patterns.</p>
-                      </div>
-                    </div>
-                    <Button>Generate</Button>
-                  </div>
-                  <div className="flex items-center justify-between rounded-md border p-4">
-                    <div className="flex items-center gap-3">
-                      <Package className="h-6 w-6 text-purple-500" />
-                      <div>
-                        <h3 className="font-medium">Product Performance</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Review top-selling and underperforming products.
-                        </p>
-                      </div>
-                    </div>
-                    <Button>Generate</Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </main>
-      </div>
+      <Footer />
     </div>
   )
 }

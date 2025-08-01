@@ -1,116 +1,141 @@
+import Link from "next/link"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Star, Heart } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import Image from "next/image"
 
-export default function FeaturedProducts() {
-  const products = [
+async function getFeaturedProducts() {
+  // In a real application, you would fetch this from your API
+  // const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products?limit=8&featured=true`);
+  // if (!res.ok) {
+  //   throw new Error('Failed to fetch featured products');
+  // }
+  // return res.json();
+
+  // Mock data for demonstration
+  return [
     {
-      id: 1,
-      name: "Handwoven Ceramic Bowl",
-      seller: "Maria's Ceramics",
-      price: 45,
-      rating: 4.8,
-      reviews: 23,
-      image: "/placeholder.svg?height=300&width=300",
-      category: "Pottery",
+      id: "prod1",
+      name: "Hand-Painted Ceramic Mug",
+      price: 25.0,
+      image: "/placeholder.svg?height=400&width=400",
+      category: { name: "Home Decor", slug: "home-decor" },
+      seller: "Artisan Ceramics",
     },
     {
-      id: 2,
-      name: "Macrame Wall Hanging",
-      seller: "Boho Crafts Co.",
-      price: 32,
-      rating: 4.9,
-      reviews: 41,
-      image: "/placeholder.svg?height=300&width=300",
-      category: "Home Decor",
+      id: "prod2",
+      name: "Woven Macrame Wall Hanging",
+      price: 45.0,
+      image: "/placeholder.svg?height=400&width=400",
+      category: { name: "Home Decor", slug: "home-decor" },
+      seller: "Boho Crafts",
     },
     {
-      id: 3,
-      name: "Hand-knitted Wool Scarf",
-      seller: "Cozy Knits Studio",
-      price: 28,
-      rating: 4.7,
-      reviews: 15,
-      image: "/placeholder.svg?height=300&width=300",
-      category: "Accessories",
+      id: "prod3",
+      name: "Sterling Silver Leaf Necklace",
+      price: 60.0,
+      image: "/placeholder.svg?height=400&width=400",
+      category: { name: "Jewelry", slug: "jewelry" },
+      seller: "Nature's Sparkle",
     },
     {
-      id: 4,
-      name: "Wooden Cutting Board",
-      seller: "Artisan Woodworks",
-      price: 55,
-      rating: 5.0,
-      reviews: 8,
-      image: "/placeholder.svg?height=300&width=300",
-      category: "Kitchen",
+      id: "prod4",
+      name: "Hand-Knitted Wool Scarf",
+      price: 55.0,
+      image: "/placeholder.svg?height=400&width=400",
+      category: { name: "Clothing", slug: "clothing" },
+      seller: "Cozy Knits",
+    },
+    {
+      id: "prod5",
+      name: "Custom Leather Wallet",
+      price: 75.0,
+      image: "/placeholder.svg?height=400&width=400",
+      category: { name: "Gifts", slug: "gifts" },
+      seller: "Leather & Co.",
+    },
+    {
+      id: "prod6",
+      name: "Artisan Soap Bar Set",
+      price: 30.0,
+      image: "/placeholder.svg?height=400&width=400",
+      category: { name: "Bath & Body", slug: "bath-body" },
+      seller: "Pure Scents",
+    },
+    {
+      id: "prod7",
+      name: "Wooden Carved Animal Figurine",
+      price: 35.0,
+      image: "/placeholder.svg?height=400&width=400",
+      category: { name: "Art Collection", slug: "art-collection" },
+      seller: "Forest Carvings",
+    },
+    {
+      id: "prod8",
+      name: "Hand-Bound Leather Journal",
+      price: 40.0,
+      image: "/placeholder.svg?height=400&width=400",
+      category: { name: "Stationery", slug: "stationery" },
+      seller: "Ink & Page",
     },
   ]
+}
+
+export default async function FeaturedProducts() {
+  const products = await getFeaturedProducts()
 
   return (
-    <section className="py-16 bg-white">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl lg:text-4xl font-bold text-sage-900 mb-4">Featured Handcrafted Items</h2>
-          <p className="text-lg text-sage-600 max-w-2xl mx-auto">
-            Discover unique pieces carefully selected from our community of talented artisans
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          {products.map((product) => (
-            <Card key={product.id} className="group hover:shadow-lg transition-shadow duration-300 border-sage-200">
-              <CardContent className="p-0">
-                <div className="relative overflow-hidden rounded-t-lg">
-                  <img
-                    src={product.image || "/placeholder.svg"}
-                    alt={product.name}
-                    className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute top-3 right-3 bg-white/80 hover:bg-white text-sage-700"
-                  >
-                    <Heart className="w-4 h-4" />
-                  </Button>
-                  <div className="absolute top-3 left-3 bg-terracotta-600 text-white px-2 py-1 rounded-full text-xs font-medium">
-                    {product.category}
-                  </div>
-                </div>
-
-                <div className="p-4 space-y-3">
-                  <div>
-                    <h3 className="font-semibold text-sage-900 group-hover:text-terracotta-600 transition-colors">
-                      {product.name}
-                    </h3>
-                    <p className="text-sm text-sage-600">{product.seller}</p>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <div className="flex items-center">
-                      <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                      <span className="text-sm font-medium text-sage-700 ml-1">{product.rating}</span>
-                    </div>
-                    <span className="text-sm text-sage-500">({product.reviews} reviews)</span>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <span className="text-xl font-bold text-sage-900">${product.price}</span>
-                    <Button size="sm" className="bg-terracotta-600 hover:bg-terracotta-700 text-white">
-                      Add to Cart
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        <div className="text-center">
-          <Button variant="outline" size="lg" className="border-sage-300 text-sage-700 hover:bg-sage-50 bg-transparent">
+    <section className="container mx-auto px-4 py-16">
+      <h2 className="text-4xl font-bold text-sage-900 text-center mb-12">Featured Products</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        {products.map((product) => (
+          <Card
+            key={product.id}
+            className="overflow-hidden rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col"
+          >
+            <Link href={`/products/${product.id}`} className="block relative h-60 w-full">
+              <Image
+                src={product.image || "/placeholder.svg"}
+                alt={product.name}
+                layout="fill"
+                objectFit="cover"
+                className="rounded-t-lg"
+              />
+            </Link>
+            <CardHeader className="p-4 pb-2 flex-grow">
+              <div className="flex justify-between items-start mb-2">
+                <CardTitle className="text-xl font-semibold text-sage-800 leading-tight">
+                  <Link href={`/products/${product.id}`} className="hover:text-terracotta-600 transition-colors">
+                    {product.name}
+                  </Link>
+                </CardTitle>
+                <Badge
+                  variant="secondary"
+                  className="bg-terracotta-100 text-terracotta-700 px-3 py-1 rounded-full text-sm"
+                >
+                  {typeof product.category === "object" ? product.category.name : product.category}
+                </Badge>
+              </div>
+              <p className="text-sage-600 text-sm">{product.seller}</p>
+            </CardHeader>
+            <CardContent className="px-4 py-2">
+              <p className="text-2xl font-bold text-terracotta-600">${product.price.toFixed(2)}</p>
+            </CardContent>
+            <CardFooter className="p-4 pt-0">
+              <Button className="w-full bg-sage-700 hover:bg-sage-800 text-white">Add to Cart</Button>
+            </CardFooter>
+          </Card>
+        ))}
+      </div>
+      <div className="text-center mt-12">
+        <Link href="/browse">
+          <Button
+            variant="outline"
+            className="border-2 border-terracotta-600 text-terracotta-600 hover:bg-terracotta-50 px-8 py-3 text-lg rounded-full bg-transparent"
+          >
             View All Products
           </Button>
-        </div>
+        </Link>
       </div>
     </section>
   )

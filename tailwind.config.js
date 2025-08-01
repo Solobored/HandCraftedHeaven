@@ -6,7 +6,6 @@ module.exports = {
     "./components/**/*.{js,jsx}",
     "./app/**/*.{js,jsx}",
     "./src/**/*.{js,jsx}",
-    "./*.{js,jsx}",
     "*.{js,ts,jsx,tsx,mdx}",
   ],
   prefix: "",
@@ -20,55 +19,6 @@ module.exports = {
     },
     extend: {
       colors: {
-        // Custom color palette for Handcrafted Haven
-        sage: {
-          50: "#f6f7f6",
-          100: "#e3e7e3",
-          200: "#c7d0c7",
-          300: "#a3b2a3",
-          400: "#7a8f7a",
-          500: "#5c735c",
-          600: "#485a48",
-          700: "#3c4a3c",
-          800: "#333d33",
-          900: "#2d342d",
-        },
-        terracotta: {
-          50: "#fdf6f3",
-          100: "#fbeae3",
-          200: "#f6d2c2",
-          300: "#efb297",
-          400: "#e68a64",
-          500: "#dc6b3f",
-          600: "#cd5530",
-          700: "#ab4427",
-          800: "#893a24",
-          900: "#6f3221",
-        },
-        cream: {
-          50: "#fefcf9",
-          100: "#fdf8f0",
-          200: "#faf0de",
-          300: "#f5e4c4",
-          400: "#eed5a0",
-          500: "#e5c178",
-          600: "#d9a851",
-          700: "#c08d3a",
-          800: "#9d7030",
-          900: "#7f5c2a",
-        },
-        amber: {
-          50: "#fffbeb",
-          100: "#fef3c7",
-          200: "#fde68a",
-          300: "#fcd34d",
-          400: "#fbbf24",
-          500: "#f59e0b",
-          600: "#d97706",
-          700: "#b45309",
-          800: "#92400e",
-          900: "#78350f",
-        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -102,6 +52,43 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // Custom colors for Handcrafted Haven
+        sage: {
+          50: "#f8faf8",
+          100: "#f0f4f0",
+          200: "#d9e5d9",
+          300: "#b8d0b8",
+          400: "#8fb58f",
+          500: "#6b9a6b",
+          600: "#4a7c4a",
+          700: "#3d653d",
+          800: "#2f4f2f",
+          900: "#1a2e1a",
+        },
+        terracotta: {
+          50: "#fef7f0",
+          100: "#fdeee0",
+          200: "#fad5b8",
+          300: "#f7b885",
+          400: "#f39652",
+          500: "#e67e22",
+          600: "#d35400",
+          700: "#a04000",
+          800: "#6d2b00",
+          900: "#3a1600",
+        },
+        cream: {
+          50: "#fefefe",
+          100: "#fdfcfc",
+          200: "#faf8f8",
+          300: "#f5f2f2",
+          400: "#ede8e8",
+          500: "#e0d9d9",
+          600: "#c7bcbc",
+          700: "#a89999",
+          800: "#7a6b6b",
+          900: "#4a3e3e",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -110,17 +97,53 @@ module.exports = {
       },
       keyframes: {
         "accordion-down": {
-          from: { height: "0" },
-          to: { height: "var(--radix-accordion-content-height)" },
+          from: {
+            height: "0",
+          },
+          to: {
+            height: "var(--radix-accordion-content-height)",
+          },
         },
         "accordion-up": {
-          from: { height: "var(--radix-accordion-content-height)" },
-          to: { height: "0" },
+          from: {
+            height: "var(--radix-accordion-content-height)",
+          },
+          to: {
+            height: "0",
+          },
+        },
+        blob: {
+          "0%": {
+            transform: "translate(0px, 0px) scale(1)",
+          },
+          "33%": {
+            transform: "translate(30px, -50px) scale(1.1)",
+          },
+          "66%": {
+            transform: "translate(-20px, 20px) scale(0.9)",
+          },
+          "100%": {
+            transform: "translate(0px, 0px) scale(1)",
+          },
+        },
+        float: {
+          "0%, 100%": {
+            transform: "translateY(0px)",
+          },
+          "50%": {
+            transform: "translateY(-20px)",
+          },
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        blob: "blob 7s infinite",
+        float: "float 6s ease-in-out infinite",
+      },
+      animationDelay: {
+        2000: "2s",
+        4000: "4s",
       },
     },
   },

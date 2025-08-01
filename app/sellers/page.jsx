@@ -5,121 +5,10 @@ import Header from "@/components/header"
 import Footer from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Search, MapPin, Star, Award, Filter, Users, TrendingUp } from "lucide-react"
 import Link from "next/link"
-
-const mockSellers = [
-  {
-    id: 1,
-    name: "Elena Rodriguez",
-    shop: "Elena's Pottery Studio",
-    location: "Santa Fe, NM",
-    specialty: "Ceramic Art",
-    rating: 4.9,
-    reviewCount: 127,
-    products: 47,
-    sales: 340,
-    image: "/placeholder.svg?height=200&width=200",
-    coverImage: "/placeholder.svg?height=300&width=600",
-    description: "Creating beautiful, functional pottery inspired by southwestern traditions and modern aesthetics.",
-    badge: "Featured Artisan",
-    joinDate: "2019",
-    featured: true,
-    verified: true,
-  },
-  {
-    id: 2,
-    name: "James Chen",
-    shop: "Woodcraft Creations",
-    location: "Portland, OR",
-    specialty: "Woodworking",
-    rating: 4.8,
-    reviewCount: 89,
-    products: 32,
-    sales: 156,
-    image: "/placeholder.svg?height=200&width=200",
-    coverImage: "/placeholder.svg?height=300&width=600",
-    description: "Handcrafted furniture and home accessories from sustainable, locally-sourced wood.",
-    badge: "Eco-Friendly",
-    joinDate: "2020",
-    featured: true,
-    verified: true,
-  },
-  {
-    id: 3,
-    name: "Amara Okafor",
-    shop: "Textile Dreams",
-    location: "Austin, TX",
-    specialty: "Fiber Arts",
-    rating: 5.0,
-    reviewCount: 64,
-    products: 28,
-    sales: 98,
-    image: "/placeholder.svg?height=200&width=200",
-    coverImage: "/placeholder.svg?height=300&width=600",
-    description: "Vibrant textiles and weavings celebrating African heritage and contemporary design.",
-    badge: "Rising Star",
-    joinDate: "2021",
-    featured: false,
-    verified: true,
-  },
-  {
-    id: 4,
-    name: "Michael Thompson",
-    shop: "Silver & Stone",
-    location: "Colorado Springs, CO",
-    specialty: "Jewelry Making",
-    rating: 4.7,
-    reviewCount: 156,
-    products: 89,
-    sales: 423,
-    image: "/placeholder.svg?height=200&width=200",
-    coverImage: "/placeholder.svg?height=300&width=600",
-    description: "Handcrafted jewelry featuring natural stones and precious metals with modern designs.",
-    badge: "Top Seller",
-    joinDate: "2018",
-    featured: true,
-    verified: true,
-  },
-  {
-    id: 5,
-    name: "Sarah Kim",
-    shop: "Garden Light Candles",
-    location: "Seattle, WA",
-    specialty: "Candle Making",
-    rating: 4.6,
-    reviewCount: 203,
-    products: 45,
-    sales: 567,
-    image: "/placeholder.svg?height=200&width=200",
-    coverImage: "/placeholder.svg?height=300&width=600",
-    description: "Hand-poured soy candles with natural fragrances inspired by Pacific Northwest gardens.",
-    badge: "Best Seller",
-    joinDate: "2019",
-    featured: false,
-    verified: true,
-  },
-  {
-    id: 6,
-    name: "David Martinez",
-    shop: "Desert Glass Art",
-    location: "Phoenix, AZ",
-    specialty: "Glass Blowing",
-    rating: 4.9,
-    reviewCount: 78,
-    products: 23,
-    sales: 134,
-    image: "/placeholder.svg?height=200&width=200",
-    coverImage: "/placeholder.svg?height=300&width=600",
-    description: "Unique glass art pieces and functional items inspired by desert landscapes.",
-    badge: "Master Craftsman",
-    joinDate: "2017",
-    featured: false,
-    verified: true,
-  },
-]
 
 const specialties = [
   "All Specialties",
@@ -141,23 +30,125 @@ const sortOptions = [
   { value: "products", label: "Most Products" },
 ]
 
+// Mock sellers data
+const mockSellers = [
+  {
+    id: 1,
+    name: "Sarah Chen",
+    shopName: "Ceramic Wonders",
+    avatar: "/placeholder.svg?height=200&width=200",
+    description: "Hand-thrown pottery and unique ceramic art.",
+    productsCount: 45,
+    location: "Portland, OR",
+    rating: 4.8,
+    reviewCount: 124,
+    products: 45,
+    sales: 230,
+    verified: true,
+    featured: true,
+    specialty: "Ceramic Art",
+    badge: "Top Seller",
+    coverImage: "/placeholder.svg?height=300&width=600",
+    joinedDate: "2022-03-15",
+  },
+  {
+    id: 2,
+    name: "Marcus Rodriguez",
+    shopName: "Woodland Crafts",
+    avatar: "/placeholder.svg?height=200&width=200",
+    description: "Rustic wooden furniture and handcrafted decor.",
+    productsCount: 30,
+    location: "Denver, CO",
+    rating: 4.9,
+    reviewCount: 89,
+    products: 30,
+    sales: 156,
+    verified: true,
+    featured: true,
+    specialty: "Woodworking",
+    badge: "Artisan",
+    coverImage: "/placeholder.svg?height=300&width=600",
+    joinedDate: "2021-08-20",
+  },
+  {
+    id: 3,
+    name: "Elena Vasquez",
+    shopName: "Textile Tales",
+    avatar: "/placeholder.svg?height=200&width=200",
+    description: "Beautiful hand-woven textiles and custom apparel.",
+    productsCount: 60,
+    location: "Austin, TX",
+    rating: 4.7,
+    reviewCount: 203,
+    products: 60,
+    sales: 340,
+    verified: true,
+    featured: false,
+    specialty: "Fiber Arts",
+    badge: "Rising Star",
+    coverImage: "/placeholder.svg?height=300&width=600",
+    joinedDate: "2023-01-10",
+  },
+  {
+    id: 4,
+    name: "David Lee",
+    shopName: "Jewel Spark",
+    avatar: "/placeholder.svg?height=200&width=200",
+    description: "Exquisite handmade jewelry for every occasion.",
+    productsCount: 70,
+    location: "Seattle, WA",
+    rating: 4.6,
+    reviewCount: 167,
+    products: 70,
+    sales: 289,
+    verified: false,
+    featured: false,
+    specialty: "Jewelry Making",
+    badge: "New Seller",
+    coverImage: "/placeholder.svg?height=300&width=600",
+    joinedDate: "2023-06-01",
+  },
+]
+
 export default function SellersPage() {
+  const [sellers, setSellers] = useState(mockSellers)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedSpecialty, setSelectedSpecialty] = useState("All Specialties")
   const [sortBy, setSortBy] = useState("featured")
   const [showFilters, setShowFilters] = useState(false)
 
-  const filteredSellers = mockSellers.filter((seller) => {
+  // Update the filteredSellers logic
+  const filteredSellers = sellers.filter((seller) => {
     const matchesSearch =
       seller.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      seller.shop.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      seller.shopName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       seller.location.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesSpecialty = selectedSpecialty === "All Specialties" || seller.specialty === selectedSpecialty
 
     return matchesSearch && matchesSpecialty
   })
 
-  const featuredSellers = filteredSellers.filter((seller) => seller.featured)
+  // Add sorting logic
+  const sortedSellers = [...filteredSellers].sort((a, b) => {
+    switch (sortBy) {
+      case "featured":
+        if (a.featured && !b.featured) return -1
+        if (!a.featured && b.featured) return 1
+        return b.rating - a.rating // Secondary sort by rating
+      case "rating":
+        return b.rating - a.rating
+      case "sales":
+        return b.sales - a.sales
+      case "newest":
+        return new Date(b.joinedDate || "2023-01-01") - new Date(a.joinedDate || "2023-01-01")
+      case "products":
+        return b.products - a.products
+      default:
+        return 0
+    }
+  })
+
+  const featuredSellers = sortedSellers.filter((seller) => seller.featured)
 
   return (
     <div className="min-h-screen bg-cream-50">
@@ -255,42 +246,6 @@ export default function SellersPage() {
               Filters
             </Button>
           </div>
-
-          {/* Advanced Filters */}
-          {showFilters && (
-            <div className="mt-6 pt-6 border-t border-sage-200">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-sage-700 mb-2">Rating</label>
-                  <select className="w-full px-3 py-2 border border-sage-300 rounded-md focus:border-terracotta-400">
-                    <option value="">Any Rating</option>
-                    <option value="4">4+ Stars</option>
-                    <option value="4.5">4.5+ Stars</option>
-                    <option value="5">5 Stars Only</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-sage-700 mb-2">Experience</label>
-                  <select className="w-full px-3 py-2 border border-sage-300 rounded-md focus:border-terracotta-400">
-                    <option value="">Any Experience</option>
-                    <option value="new">New (Less than 1 year)</option>
-                    <option value="experienced">Experienced (1-3 years)</option>
-                    <option value="veteran">Veteran (3+ years)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-sage-700 mb-2">Verification</label>
-                  <select className="w-full px-3 py-2 border border-sage-300 rounded-md focus:border-terracotta-400">
-                    <option value="">All Sellers</option>
-                    <option value="verified">Verified Only</option>
-                    <option value="featured">Featured Only</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Featured Sellers */}
@@ -304,26 +259,32 @@ export default function SellersPage() {
                     <div className="relative h-48">
                       <img
                         src={seller.coverImage || "/placeholder.svg"}
-                        alt={`${seller.shop} cover`}
+                        alt={`${seller.shopName} cover`}
                         className="w-full h-full object-cover"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                      <Badge className="absolute top-4 left-4 bg-terracotta-600 text-white">{seller.badge}</Badge>
+                      <div className="absolute top-4 left-4 bg-terracotta-600 text-white p-1 rounded-full">
+                        <Award className="w-3 h-3" />
+                      </div>
                     </div>
 
                     <div className="p-6">
                       <div className="flex items-start space-x-4">
-                        <img
-                          src={seller.image || "/placeholder.svg"}
-                          alt={seller.name}
-                          className="w-16 h-16 rounded-full object-cover border-4 border-white -mt-8 relative z-10"
-                        />
+                        <Avatar className="w-16 h-16 rounded-full object-cover border-4 border-white -mt-8 relative z-10">
+                          <AvatarImage src={seller.avatar || "/placeholder.svg"} alt={seller.name} />
+                          <AvatarFallback>
+                            {seller.name
+                              .split(" ")
+                              .map((n) => n[0])
+                              .join("")}
+                          </AvatarFallback>
+                        </Avatar>
                         <div className="flex-1 pt-2">
                           <div className="flex items-center space-x-2 mb-1">
                             <h3 className="text-xl font-bold text-sage-900">{seller.name}</h3>
                             {seller.verified && <Award className="w-4 h-4 text-terracotta-600" />}
                           </div>
-                          <p className="text-terracotta-600 font-medium mb-1">{seller.shop}</p>
+                          <p className="text-terracotta-600 font-medium mb-1">{seller.shopName}</p>
                           <div className="flex items-center text-sage-600 text-sm mb-2">
                             <MapPin className="w-4 h-4 mr-1" />
                             {seller.location}
@@ -343,9 +304,7 @@ export default function SellersPage() {
                       <p className="text-sage-600 text-sm mb-4 leading-relaxed">{seller.description}</p>
 
                       <div className="flex items-center justify-between">
-                        <Badge variant="outline" className="text-xs">
-                          {seller.specialty}
-                        </Badge>
+                        <div className="text-xs">{seller.badge}</div>
                         <Button asChild className="bg-terracotta-600 hover:bg-terracotta-700 text-white">
                           <Link href={`/sellers/${seller.id}`}>Visit Shop</Link>
                         </Button>
@@ -363,56 +322,36 @@ export default function SellersPage() {
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-sage-900">All Artisans</h2>
             <p className="text-sage-600">
-              Showing {filteredSellers.length} of {mockSellers.length} artisans
+              Showing {filteredSellers.length} of {sellers.length} artisans
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredSellers.map((seller) => (
+            {sortedSellers.map((seller) => (
               <Card key={seller.id} className="hover:shadow-lg transition-shadow duration-300 border-sage-200">
                 <CardContent className="p-6">
-                  <div className="text-center mb-4">
-                    <div className="relative inline-block mb-3">
-                      <img
-                        src={seller.image || "/placeholder.svg"}
-                        alt={seller.name}
-                        className="w-20 h-20 rounded-full object-cover mx-auto"
-                      />
-                      {seller.verified && (
-                        <div className="absolute -top-1 -right-1 bg-terracotta-600 text-white p-1 rounded-full">
-                          <Award className="w-3 h-3" />
-                        </div>
-                      )}
-                    </div>
-
-                    <Badge className="bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded-full font-medium mb-2">
-                      {seller.badge}
-                    </Badge>
-
-                    <h3 className="text-lg font-bold text-sage-900 mb-1">{seller.name}</h3>
-                    <p className="text-terracotta-600 font-medium mb-2">{seller.shop}</p>
-
-                    <div className="flex items-center justify-center text-sage-600 text-sm mb-3">
-                      <MapPin className="w-4 h-4 mr-1" />
-                      {seller.location}
-                    </div>
-
-                    <div className="flex items-center justify-center space-x-4 text-sm mb-4">
-                      <div className="flex items-center">
-                        <Star className="w-4 h-4 fill-amber-400 text-amber-400 mr-1" />
-                        <span className="font-medium">{seller.rating}</span>
-                        <span className="text-sage-500 ml-1">({seller.reviewCount})</span>
+                  <div className="text-center mb-4 relative">
+                    <Avatar className="w-20 h-20 rounded-full object-cover mx-auto">
+                      <AvatarImage src={seller.avatar || "/placeholder.svg"} alt={seller.name} />
+                      <AvatarFallback>
+                        {seller.name
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")}
+                      </AvatarFallback>
+                    </Avatar>
+                    {seller.verified && (
+                      <div className="absolute -top-1 -right-1 bg-terracotta-600 text-white p-1 rounded-full">
+                        <Award className="w-3 h-3" />
                       </div>
-                      <div className="text-sage-600">{seller.products} products</div>
-                    </div>
+                    )}
                   </div>
 
                   <div className="space-y-3">
-                    <div className="text-center">
-                      <Badge variant="outline" className="text-xs">
-                        {seller.specialty}
-                      </Badge>
-                    </div>
+                    <CardHeader className="p-0 text-center mb-2">
+                      <CardTitle className="text-lg font-semibold text-sage-900">{seller.shopName}</CardTitle>
+                      <p className="text-sage-700 text-sm">by {seller.name}</p>
+                    </CardHeader>
 
                     <p className="text-sage-600 text-sm text-center leading-relaxed line-clamp-2">
                       {seller.description}
@@ -421,6 +360,7 @@ export default function SellersPage() {
                     <Button
                       asChild
                       variant="outline"
+                      size="lg"
                       className="w-full border-terracotta-300 text-terracotta-700 hover:bg-terracotta-50 bg-transparent"
                     >
                       <Link href={`/sellers/${seller.id}`}>Visit Shop</Link>
@@ -448,7 +388,7 @@ export default function SellersPage() {
               size="lg"
               className="border-sage-300 text-sage-700 hover:bg-sage-50 bg-transparent"
             >
-              <Link href="/seller-guide">Learn More</Link>
+              <Link href="/about">Learn More</Link>
             </Button>
           </div>
         </section>

@@ -1,151 +1,223 @@
 "use client"
 
-import * as React from "react"
+import { useState } from "react"
 import Link from "next/link"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { Menu, Search } from "lucide-react"
-
-import { cn } from "@/lib/utils"
+import { useRouter } from "next/navigation"
+import { useSession, signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Badge } from "@/components/ui/badge"
+import { Search, ShoppingCart, User, Menu, X, LogOut, Settings, Package, Shield } from "lucide-react"
+import { useCart } from "@/contexts/cart-context"
+import ShoppingCartModal from "@/components/shopping-cart" // Renamed to avoid conflict with component name
 
-export function Header() {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false)
-  const [searchQuery, setSearchQuery] = React.useState("")
+export default function Header() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isCartOpen, setIsCartOpen] = useState(false) // State for cart modal
+  const [searchQuery, setSearchQuery] = useState("")
+  const { data: session } = useSession()
+  const { getCartItemCount } = useCart()
   const router = useRouter()
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
 
-  React.useEffect(() => {
-    const currentSearch = searchParams.get("search") || ""
-    setSearchQuery(currentSearch)
-  }, [searchParams])
-
-  const handleSearchSubmit = (e) => {
+  const handleSearch = (e) => {
     e.preventDefault()
     if (searchQuery.trim()) {
       router.push(`/browse?search=${encodeURIComponent(searchQuery.trim())}`)
-      setIsMobileMenuOpen(false) // Close mobile menu after search
-    } else {
-      router.push("/browse")
+      setSearchQuery("")
+      setIsMenuOpen(false)
     }
   }
 
-  const navItems = [
+  const handleSignOut = () => {
+    signOut({ callbackUrl: "/" })
+  }
+
+  const cartItemCount = getCartItemCount()
+
+  const navigation = [
     { name: "Browse", href: "/browse" },
     { name: "Categories", href: "/categories" },
     { name: "Sellers", href: "/sellers" },
     { name: "About", href: "/about" },
-    { name: "Admin", href: "/admin" }, // Added Admin link
   ]
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 items-center justify-between">
-        <div className="flex items-center gap-4">
-          {/* Mobile Menu */}
-          <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-            <SheetTrigger asChild className="md:hidden">
-              <Button variant="ghost" size="icon">
-                <Menu className="h-5 w-5" />
-                <span className="sr-only">Toggle mobile menu</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-64 p-4">
-              <div className="flex flex-col gap-4">
-                <Link href="/" className="text-lg font-bold" onClick={() => setIsMobileMenuOpen(false)}>
-                  Handcrafted Haven
-                </Link>
-                <form onSubmit={handleSearchSubmit} className="relative">
-                  <Input
-                    type="search"
-                    placeholder="Search products..."
-                    className="w-full pr-8"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                  <Button type="submit" variant="ghost" size="icon" className="absolute right-0 top-0 h-full w-8">
-                    <Search className="h-4 w-4" />
-                    <span className="sr-only">Search</span>
-                  </Button>
-                </form>
-                <nav className="grid gap-2 text-sm font-medium">
-                  {navItems.map((item) => (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      className={cn(
-                        "flex w-full items-center rounded-md p-2 hover:bg-accent hover:text-accent-foreground",
-                        pathname === item.href && "bg-accent text-accent-foreground",
-                      )}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      {item.name}
-                    </Link>
-                  ))}
-                </nav>
-                <div className="mt-auto flex flex-col gap-2">
-                  <Button asChild>
-                    <Link href="/auth/login" onClick={() => setIsMobileMenuOpen(false)}>
-                      Sign In
-                    </Link>
-                  </Button>
-                  <Button asChild variant="outline">
-                    <Link href="/auth/register" onClick={() => setIsMobileMenuOpen(false)}>
-                      Sign Up
-                    </Link>
-                  </Button>
-                </div>
-              </div>
-            </SheetContent>
-          </Sheet>
-
-          {/* Desktop Logo and Navigation */}
-          <Link href="/" className="hidden text-lg font-bold md:block">
-            Handcrafted Haven
+    <header className="bg-white shadow-sm border-b border-sage-200 sticky top-0 z-50">
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between h-16">
+          {/* Logo */}
+          <Link href="/" className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-terracotta-600 rounded-full flex items-center justify-center">
+              <span className="text-white font-bold text-sm">HH</span>
+            </div>
+            <span className="text-xl font-bold text-sage-900 hidden sm:block">Handcrafted Haven</span>
           </Link>
-          <nav className="hidden gap-6 text-sm font-medium md:flex">
-            {navItems.map((item) => (
+
+          {/* Desktop Navigation */}
+          <nav className="hidden lg:flex items-center space-x-8">
+            {navigation.map((item) => (
               <Link
                 key={item.name}
                 href={item.href}
-                className={cn(
-                  "transition-colors hover:text-foreground/80",
-                  pathname === item.href ? "text-foreground" : "text-foreground/60",
-                )}
+                className="text-sage-700 hover:text-terracotta-600 font-medium transition-colors"
               >
                 {item.name}
               </Link>
             ))}
           </nav>
-        </div>
 
-        {/* Desktop Search and Auth */}
-        <div className="flex items-center gap-4">
-          <form onSubmit={handleSearchSubmit} className="relative hidden md:block">
-            <Input
-              type="search"
-              placeholder="Search products..."
-              className="w-[200px] pr-8 lg:w-[300px]"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <Button type="submit" variant="ghost" size="icon" className="absolute right-0 top-0 h-full w-8">
-              <Search className="h-4 w-4" />
-              <span className="sr-only">Search</span>
+          {/* Search Bar - Desktop */}
+          <div className="hidden md:flex flex-1 max-w-md mx-8">
+            <form onSubmit={handleSearch} className="relative w-full">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sage-400 w-4 h-4" />
+              <Input
+                type="search"
+                placeholder="Search handcrafted items..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 border-sage-300 focus:border-terracotta-400 w-full"
+              />
+            </form>
+          </div>
+
+          {/* Right Side Actions */}
+          <div className="flex items-center space-x-4">
+            {/* Cart Button (now opens modal) */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-sage-700 hover:text-terracotta-600 relative"
+              onClick={() => setIsCartOpen(true)} // Open cart modal
+            >
+              <ShoppingCart className="w-5 h-5" />
+              {cartItemCount > 0 && (
+                <Badge className="absolute -top-2 -right-2 bg-terracotta-600 text-white text-xs min-w-[1.25rem] h-5 flex items-center justify-center rounded-full">
+                  {cartItemCount}
+                </Badge>
+              )}
             </Button>
-          </form>
-          <div className="hidden md:flex items-center gap-2">
-            <Button asChild variant="ghost">
-              <Link href="/auth/login">Sign In</Link>
-            </Button>
-            <Button asChild>
-              <Link href="/auth/register">Sign Up</Link>
+
+            {/* User Menu */}
+            {session ? (
+              <div className="relative group">
+                <Button variant="ghost" size="sm" className="text-sage-700 hover:text-terracotta-600">
+                  <User className="w-5 h-5" />
+                  <span className="ml-2 hidden sm:inline">{session.user.name?.split(" ")[0]}</span>
+                </Button>
+
+                {/* Dropdown Menu */}
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-sage-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                  <div className="py-1">
+                    <div className="px-4 py-2 border-b border-sage-100">
+                      <p className="text-sm font-medium text-sage-900">{session.user.name}</p>
+                      <p className="text-xs text-sage-600">{session.user.email}</p>
+                      {session.user.role && (
+                        <Badge variant="outline" className="mt-1 text-xs">
+                          {session.user.role}
+                        </Badge>
+                      )}
+                    </div>
+
+                    <Link
+                      href="/profile"
+                      className="flex items-center px-4 py-2 text-sm text-sage-700 hover:bg-sage-50"
+                    >
+                      <Settings className="w-4 h-4 mr-2" />
+                      Profile Settings
+                    </Link>
+
+                    {(session.user.role === "seller" || session.user.role === "admin") && (
+                      <Link
+                        href="/seller/dashboard"
+                        className="flex items-center px-4 py-2 text-sm text-sage-700 hover:bg-sage-50"
+                      >
+                        <Package className="w-4 h-4 mr-2" />
+                        Seller Dashboard
+                      </Link>
+                    )}
+
+                    {session.user.role === "admin" && (
+                      <Link
+                        href="/admin"
+                        className="flex items-center px-4 py-2 text-sm text-sage-700 hover:bg-sage-50"
+                      >
+                        <Shield className="w-4 h-4 mr-2" />
+                        Admin Panel
+                      </Link>
+                    )}
+
+                    <div className="border-t border-sage-100">
+                      <button
+                        onClick={handleSignOut}
+                        className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                      >
+                        <LogOut className="w-4 h-4 mr-2" />
+                        Sign Out
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <Link href="/auth/login">
+                  <Button variant="ghost" size="sm" className="text-sage-700 hover:text-terracotta-600">
+                    Sign In
+                  </Button>
+                </Link>
+                <Link href="/auth/register">
+                  <Button size="sm" className="bg-terracotta-600 hover:bg-terracotta-700 text-white">
+                    Sign Up
+                  </Button>
+                </Link>
+              </div>
+            )}
+
+            {/* Mobile Menu Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="lg:hidden text-sage-700"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
+              {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </Button>
           </div>
         </div>
+
+        {/* Mobile Menu */}
+        {isMenuOpen && (
+          <div className="lg:hidden border-t border-sage-200 py-4">
+            {/* Mobile Search */}
+            <form onSubmit={handleSearch} className="relative mb-4">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sage-400 w-4 h-4" />
+              <Input
+                type="search"
+                placeholder="Search handcrafted items..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 border-sage-300 focus:border-terracotta-400"
+              />
+            </form>
+
+            {/* Mobile Navigation */}
+            <nav className="space-y-2">
+              {navigation.map((item) => (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className="block py-2 text-sage-700 hover:text-terracotta-600 font-medium"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {item.name}
+                </Link>
+              ))}
+            </nav>
+          </div>
+        )}
       </div>
+      {/* Shopping Cart Modal */}
+      <ShoppingCartModal isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </header>
   )
 }

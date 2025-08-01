@@ -1,122 +1,85 @@
+import Link from "next/link"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { MapPin, Star, Award } from "lucide-react"
 
-export default function SellerSpotlight() {
-  const sellers = [
+async function getFeaturedSellers() {
+  // In a real application, you would fetch this from your API
+  // const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sellers?limit=3&featured=true`);
+  // if (!res.ok) {
+  //   throw new Error('Failed to fetch featured sellers');
+  // }
+  // return res.json();
+
+  // Mock data for demonstration
+  return [
     {
       id: 1,
-      name: "Elena Rodriguez",
-      shop: "Elena's Pottery Studio",
-      location: "Santa Fe, NM",
-      specialty: "Ceramic Art",
-      rating: 4.9,
-      products: 47,
-      image: "/placeholder.svg?height=200&width=200",
-      description: "Creating beautiful, functional pottery inspired by southwestern traditions.",
-      badge: "Featured Artisan",
+      name: "Sarah Chen",
+      shopName: "Ceramic Wonders",
+      avatar: "/placeholder.svg?height=200&width=200",
+      description: "Hand-thrown pottery and unique ceramic art, inspired by nature's forms and colors.",
     },
     {
       id: 2,
-      name: "James Chen",
-      shop: "Woodcraft Creations",
-      location: "Portland, OR",
-      specialty: "Woodworking",
-      rating: 4.8,
-      products: 32,
-      image: "/placeholder.svg?height=200&width=200",
-      description: "Handcrafted furniture and home accessories from sustainable wood.",
-      badge: "Eco-Friendly",
+      name: "Marcus Rodriguez",
+      shopName: "Woodland Crafts",
+      avatar: "/placeholder.svg?height=200&width=200",
+      description: "Rustic wooden furniture and handcrafted decor, bringing the warmth of the forest indoors.",
     },
     {
       id: 3,
-      name: "Amara Okafor",
-      shop: "Textile Dreams",
-      location: "Austin, TX",
-      specialty: "Fiber Arts",
-      rating: 5.0,
-      products: 28,
-      image: "/placeholder.svg?height=200&width=200",
-      description: "Vibrant textiles and weavings celebrating African heritage.",
-      badge: "Rising Star",
+      name: "Elena Vasquez",
+      shopName: "Textile Tales",
+      avatar: "/placeholder.svg?height=200&width=200",
+      description: "Beautiful hand-woven textiles and custom apparel, each piece telling a unique story.",
     },
   ]
+}
+
+export default async function SellerSpotlight() {
+  const sellers = await getFeaturedSellers()
 
   return (
-    <section className="py-16 bg-sage-50">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl lg:text-4xl font-bold text-sage-900 mb-4">Meet Our Artisans</h2>
-          <p className="text-lg text-sage-600 max-w-2xl mx-auto">
-            Get to know the talented creators behind these beautiful handcrafted pieces
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-          {sellers.map((seller) => (
-            <Card key={seller.id} className="bg-white hover:shadow-lg transition-shadow duration-300 border-sage-200">
-              <CardContent className="p-6">
-                <div className="text-center mb-6">
-                  <div className="relative inline-block mb-4">
-                    <img
-                      src={seller.image || "/placeholder.svg"}
-                      alt={seller.name}
-                      className="w-20 h-20 rounded-full object-cover mx-auto"
-                    />
-                    <div className="absolute -top-2 -right-2 bg-terracotta-600 text-white p-1 rounded-full">
-                      <Award className="w-3 h-3" />
-                    </div>
-                  </div>
-
-                  <div className="mb-2">
-                    <span className="inline-block bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded-full font-medium">
-                      {seller.badge}
-                    </span>
-                  </div>
-
-                  <h3 className="text-xl font-bold text-sage-900 mb-1">{seller.name}</h3>
-                  <p className="text-terracotta-600 font-medium mb-2">{seller.shop}</p>
-
-                  <div className="flex items-center justify-center text-sage-600 text-sm mb-3">
-                    <MapPin className="w-4 h-4 mr-1" />
-                    {seller.location}
-                  </div>
-
-                  <div className="flex items-center justify-center space-x-4 text-sm">
-                    <div className="flex items-center">
-                      <Star className="w-4 h-4 fill-amber-400 text-amber-400 mr-1" />
-                      <span className="font-medium">{seller.rating}</span>
-                    </div>
-                    <div className="text-sage-600">{seller.products} products</div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="text-center">
-                    <span className="inline-block bg-sage-100 text-sage-700 px-3 py-1 rounded-full text-sm font-medium">
-                      {seller.specialty}
-                    </span>
-                  </div>
-
-                  <p className="text-sage-600 text-sm text-center leading-relaxed">{seller.description}</p>
-
-                  <Button
-                    variant="outline"
-                    className="w-full border-terracotta-300 text-terracotta-700 hover:bg-terracotta-50 bg-transparent"
-                  >
-                    Visit Shop
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        <div className="text-center">
-          <Button size="lg" className="bg-terracotta-600 hover:bg-terracotta-700 text-white">
-            Become a Seller
+    <section className="container mx-auto px-4 py-16">
+      <h2 className="text-4xl font-bold text-sage-900 text-center mb-12">Meet Our Featured Artisans</h2>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {sellers.map((seller) => (
+          <Card
+            key={seller.id}
+            className="flex flex-col items-center p-6 shadow-lg hover:shadow-xl transition-shadow duration-300"
+          >
+            <Avatar className="w-24 h-24 mb-4 border-2 border-terracotta-400">
+              <AvatarImage src={seller.avatar || "/placeholder.svg"} alt={seller.name} />
+              <AvatarFallback>
+                {seller.name
+                  .split(" ")
+                  .map((n) => n[0])
+                  .join("")}
+              </AvatarFallback>
+            </Avatar>
+            <CardHeader className="p-0 text-center mb-2">
+              <CardTitle className="text-2xl font-semibold text-sage-900">{seller.shopName}</CardTitle>
+              <p className="text-sage-700 text-sm">by {seller.name}</p>
+            </CardHeader>
+            <CardContent className="p-0 text-center flex-1">
+              <p className="text-sage-600 mb-4 line-clamp-3">{seller.description}</p>
+            </CardContent>
+            <Link href={`/sellers/${seller.id}`}>
+              <Button className="bg-terracotta-600 hover:bg-terracotta-700 text-white">Visit Shop</Button>
+            </Link>
+          </Card>
+        ))}
+      </div>
+      <div className="text-center mt-12">
+        <Link href="/sellers">
+          <Button
+            variant="outline"
+            className="border-2 border-sage-700 text-sage-700 hover:bg-sage-50 px-8 py-3 text-lg rounded-full bg-transparent"
+          >
+            View All Sellers
           </Button>
-        </div>
+        </Link>
       </div>
     </section>
   )
