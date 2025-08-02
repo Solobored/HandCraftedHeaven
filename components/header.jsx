@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useSession, signOut } from "next-auth/react"
@@ -9,15 +9,19 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Search, ShoppingCart, User, Menu, X, LogOut, Settings, Package, Shield } from "lucide-react"
 import { useCart } from "@/contexts/cart-context"
-import ShoppingCartModal from "@/components/shopping-cart" // Renamed to avoid conflict with component name
+import ShoppingCartComponent from "@/components/shopping-cart"
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [isCartOpen, setIsCartOpen] = useState(false) // State for cart modal
+  const [isCartOpen, setIsCartOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const { data: session } = useSession()
   const { getCartItemCount } = useCart()
   const router = useRouter()
+
+  const handleSearchChange = useCallback((e) => {
+    setSearchQuery(e.target.value)
+  }, [])
 
   const handleSearch = (e) => {
     e.preventDefault()
@@ -74,7 +78,7 @@ export default function Header() {
                 type="search"
                 placeholder="Search handcrafted items..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={handleSearchChange}
                 className="pl-10 border-sage-300 focus:border-terracotta-400 w-full"
               />
             </form>
@@ -82,12 +86,12 @@ export default function Header() {
 
           {/* Right Side Actions */}
           <div className="flex items-center space-x-4">
-            {/* Cart Button (now opens modal) */}
+            {/* Cart Button */}
             <Button
               variant="ghost"
               size="sm"
               className="text-sage-700 hover:text-terracotta-600 relative"
-              onClick={() => setIsCartOpen(true)} // Open cart modal
+              onClick={() => setIsCartOpen(true)}
             >
               <ShoppingCart className="w-5 h-5" />
               {cartItemCount > 0 && (
@@ -104,8 +108,6 @@ export default function Header() {
                   <User className="w-5 h-5" />
                   <span className="ml-2 hidden sm:inline">{session.user.name?.split(" ")[0]}</span>
                 </Button>
-
-                {/* Dropdown Menu */}
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-sage-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                   <div className="py-1">
                     <div className="px-4 py-2 border-b border-sage-100">
@@ -117,7 +119,13 @@ export default function Header() {
                         </Badge>
                       )}
                     </div>
-
+                    <Link
+                      href="/dashboard"
+                      className="flex items-center px-4 py-2 text-sm text-sage-700 hover:bg-sage-50"
+                    >
+                      <Settings className="w-4 h-4 mr-2" />
+                      Dashboard
+                    </Link>
                     <Link
                       href="/profile"
                       className="flex items-center px-4 py-2 text-sm text-sage-700 hover:bg-sage-50"
@@ -125,7 +133,6 @@ export default function Header() {
                       <Settings className="w-4 h-4 mr-2" />
                       Profile Settings
                     </Link>
-
                     {(session.user.role === "seller" || session.user.role === "admin") && (
                       <Link
                         href="/seller/dashboard"
@@ -135,7 +142,6 @@ export default function Header() {
                         Seller Dashboard
                       </Link>
                     )}
-
                     {session.user.role === "admin" && (
                       <Link
                         href="/admin"
@@ -145,7 +151,6 @@ export default function Header() {
                         Admin Panel
                       </Link>
                     )}
-
                     <div className="border-t border-sage-100">
                       <button
                         onClick={handleSignOut}
@@ -188,19 +193,16 @@ export default function Header() {
         {/* Mobile Menu */}
         {isMenuOpen && (
           <div className="lg:hidden border-t border-sage-200 py-4">
-            {/* Mobile Search */}
             <form onSubmit={handleSearch} className="relative mb-4">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sage-400 w-4 h-4" />
               <Input
                 type="search"
                 placeholder="Search handcrafted items..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={handleSearchChange}
                 className="pl-10 border-sage-300 focus:border-terracotta-400"
               />
             </form>
-
-            {/* Mobile Navigation */}
             <nav className="space-y-2">
               {navigation.map((item) => (
                 <Link
@@ -216,8 +218,9 @@ export default function Header() {
           </div>
         )}
       </div>
-      {/* Shopping Cart Modal */}
-      <ShoppingCartModal isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+
+      {/* Shopping Cart Sheet */}
+      <ShoppingCartComponent isOpen={isCartOpen} onOpenChange={setIsCartOpen} />
     </header>
   )
 }

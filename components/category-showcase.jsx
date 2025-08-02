@@ -12,42 +12,36 @@ const categories = [
     slug: "home-decor",
     description: "Beautiful handcrafted items to make your house a home",
     image: "/placeholder.svg?height=300&width=400",
-    itemCount: "150+ items",
   },
   {
     name: "Jewelry",
     slug: "jewelry",
     description: "Unique, handmade jewelry pieces that tell your story",
     image: "/placeholder.svg?height=300&width=400",
-    itemCount: "200+ items",
   },
   {
     name: "Art Collection",
     slug: "art-collection",
     description: "Original artwork from talented artists worldwide",
     image: "/placeholder.svg?height=300&width=400",
-    itemCount: "80+ items",
   },
   {
     name: "Kitchen",
     slug: "kitchen",
     description: "Handcrafted kitchenware for the culinary enthusiast",
     image: "/placeholder.svg?height=300&width=400",
-    itemCount: "120+ items",
   },
   {
     name: "Clothing",
     slug: "clothing",
     description: "Handmade clothing and accessories with character",
     image: "/placeholder.svg?height=300&width=400",
-    itemCount: "90+ items",
   },
   {
     name: "Gifts",
     slug: "gifts",
     description: "Perfect handcrafted gifts for every occasion",
     image: "/placeholder.svg?height=300&width=400",
-    itemCount: "180+ items",
   },
 ]
 
@@ -77,11 +71,6 @@ export default function CategoryShowcase() {
                   className="group-hover:scale-105 transition-transform duration-300"
                 />
                 <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300" />
-                <div className="absolute top-4 right-4">
-                  <span className="bg-white/90 text-sage-800 px-3 py-1 rounded-full text-sm font-medium">
-                    {category.itemCount}
-                  </span>
-                </div>
               </div>
               <CardContent className="p-6">
                 <h3 className="text-xl font-semibold text-sage-900 mb-2 group-hover:text-terracotta-600 transition-colors">

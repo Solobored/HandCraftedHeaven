@@ -9,7 +9,7 @@ export async function GET(request, { params }) {
     .select(`
       *,
       categories ( name, slug ),
-      users ( name as seller_name )
+      users ( name )
     `)
     .eq("id", id)
     .eq("status", "approved")
@@ -37,6 +37,7 @@ export async function PUT(request, { params }) {
       description,
       price,
       stock_quantity: stock,
+      stock: stock,
       image_url,
       category_id,
       images: image_url ? [image_url] : [],
@@ -46,7 +47,7 @@ export async function PUT(request, { params }) {
     .select(`
       *,
       categories ( name, slug ),
-      users ( name as seller_name )
+      users ( name )
     `)
 
   if (error) {
