@@ -82,6 +82,7 @@ export default function BrowsePage() {
       const response = await fetch(`/api/products?${params.toString()}`)
       if (response.ok) {
         const data = await response.json()
+        console.log("Fetched products:", data) // Debug log
         setProducts(data || [])
       } else {
         console.error("Failed to fetch products")
@@ -109,6 +110,7 @@ export default function BrowsePage() {
 
   // Handle category change
   const handleCategoryChange = (category) => {
+    console.log("Category changed to:", category) // Debug log
     setSelectedCategory(category)
     const params = new URLSearchParams(searchParams)
     if (category !== "all") {

@@ -13,6 +13,10 @@ import Image from "next/image"
 import Link from "next/link"
 import { useCart } from "@/contexts/cart-context"
 import { toast } from "@/hooks/use-toast"
+import { NextResponse } from "next/server"
+import { getServerSession } from "next-auth/next"
+import { authOptions } from "@/app/api/auth/[...nextauth]/route"
+import { supabase } from "@/lib/supabase"
 
 export default function BrowsePage() {
   const [products, setProducts] = useState([])
@@ -309,4 +313,42 @@ export default function BrowsePage() {
       </div>
     </div>
   )
+}
+
+export async function PUT(request) {
+  try {
+    const session = await getServerSession(authOptions)
+
+    if (!session || !session.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const { newRole } = await request.json()
+
+    if (!["buyer", "seller", "admin"].includes(newRole)) {
+      return NextResponse.json({ error: "Invalid role" }, { status: 400 })
+    }
+
+    // Update user role in database
+    const { error } = await supabase
+      .from("users")
+      .update({
+        role: newRole,
+        seller_name: newRole === "seller" ? session.user.name : null,
+      })
+      .eq("id", session.user.id)
+
+    if (error) {
+      console.error("Error updating user role:", error)
+      return NextResponse.json({ error: "Failed to update role" }, { status: 500 })
+    }
+
+    return NextResponse.json({
+      message: "Role updated successfully",
+      role: newRole,
+    })
+  } catch (error) {
+    console.error("Error in PUT /api/user/role:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
 }
