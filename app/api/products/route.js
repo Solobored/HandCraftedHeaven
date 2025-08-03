@@ -1,19 +1,18 @@
 import { NextResponse } from "next/server"
+import { getServerSession } from "next-auth"
+import { authOptions } from "../auth/[...nextauth]/route"
 import { supabase } from "@/lib/supabase"
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url)
-    const limit = searchParams.get("limit")
     const category = searchParams.get("category")
     const seller_id = searchParams.get("seller_id")
     const search = searchParams.get("search")
+    const minPrice = searchParams.get("minPrice")
+    const maxPrice = searchParams.get("maxPrice")
 
-    let query = supabase
-      .from("products")
-      .select(`
+    let query = supabase.from("products").select(`
         *,
         categories (
           id,
@@ -21,13 +20,10 @@ export async function GET(request) {
         ),
         users (
           id,
-          full_name,
-          seller_name
+          name
         )
       `)
-      .eq("status", "approved")
 
-    // Apply filters
     if (category && category !== "all") {
       query = query.eq("category_id", category)
     }
@@ -40,24 +36,31 @@ export async function GET(request) {
       query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`)
     }
 
-    // Apply limit
-    if (limit) {
-      query = query.limit(Number.parseInt(limit))
+    if (minPrice) {
+      query = query.gte("price", Number.parseFloat(minPrice))
     }
 
-    // Order by created_at descending
-    query = query.order("created_at", { ascending: false })
+    if (maxPrice) {
+      query = query.lte("price", Number.parseFloat(maxPrice))
+    }
 
-    const { data: products, error } = await query
+    const { data: products, error } = await query.order("created_at", { ascending: false })
 
     if (error) {
       console.error("Error fetching products:", error)
       return NextResponse.json({ error: "Failed to fetch products" }, { status: 500 })
     }
 
-    return NextResponse.json(products || [])
+    // Ensure price is a number for all products
+    const processedProducts = products.map((product) => ({
+      ...product,
+      price: Number.parseFloat(product.price) || 0,
+      stock_quantity: Number.parseInt(product.stock_quantity) || 0,
+    }))
+
+    return NextResponse.json(processedProducts)
   } catch (error) {
-    console.error("Products API error:", error)
+    console.error("Error in products GET:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
@@ -71,68 +74,127 @@ export async function POST(request) {
     }
 
     const body = await request.json()
-    const { name, description, price, stock, category_id, image_url, seller_id } = body
+    const { name, description, price, category_id, stock_quantity, image_url } = body
 
-    // Validation
-    if (!name || !description || !price || !category_id) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+    // Validate required fields
+    if (!name || !price || !category_id) {
+      return NextResponse.json(
+        {
+          error: "Missing required fields: name, price, and category_id are required",
+        },
+        { status: 400 },
+      )
     }
 
-    const parsedPrice = Number.parseFloat(price)
-    const parsedStock = Number.parseInt(stock) || 0
-
-    if (isNaN(parsedPrice) || parsedPrice <= 0) {
-      return NextResponse.json({ error: "Invalid price" }, { status: 400 })
+    // Validate price is a number
+    const numericPrice = Number.parseFloat(price)
+    if (isNaN(numericPrice) || numericPrice < 0) {
+      return NextResponse.json(
+        {
+          error: "Price must be a valid positive number",
+        },
+        { status: 400 },
+      )
     }
 
-    // Use seller_id from request if provided (for admin), otherwise use session user id
-    const finalSellerId = seller_id || session.user.id
-
-    // Verify user has permission to create products for this seller
-    if (session.user.role !== "admin" && finalSellerId !== session.user.id) {
-      return NextResponse.json({ error: "Unauthorized to create products for this seller" }, { status: 403 })
+    // Validate stock quantity
+    const numericStock = Number.parseInt(stock_quantity) || 0
+    if (numericStock < 0) {
+      return NextResponse.json(
+        {
+          error: "Stock quantity must be a positive number",
+        },
+        { status: 400 },
+      )
     }
 
-    // Verify the seller exists and has seller role
-    const { data: seller, error: sellerError } = await supabase
+    // Get user profile to check if they're a seller or admin
+    const { data: userProfile, error: userError } = await supabase
       .from("users")
       .select("id, role")
-      .eq("id", finalSellerId)
+      .eq("id", session.user.id)
       .single()
 
-    if (sellerError || !seller) {
-      return NextResponse.json({ error: "Seller not found" }, { status: 404 })
+    if (userError || !userProfile) {
+      console.error("User profile error:", userError)
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
-    if (seller.role !== "seller" && seller.role !== "admin") {
-      return NextResponse.json({ error: "User is not a seller" }, { status: 403 })
+    // Check if user is seller or admin
+    if (userProfile.role !== "seller" && userProfile.role !== "admin") {
+      return NextResponse.json(
+        {
+          error: "Only sellers and admins can create products",
+        },
+        { status: 403 },
+      )
     }
 
-    // Create the product - keep category_id as string since it's a UUID
-    const productData = {
-      name: name.trim(),
-      description: description.trim(),
-      price: parsedPrice,
-      stock: parsedStock,
-      stock_quantity: parsedStock,
-      category_id: category_id, // Keep as string for UUID
-      seller_id: finalSellerId,
-      image_url: image_url || null,
-      status: "approved",
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+    // Verify category exists
+    const { data: category, error: categoryError } = await supabase
+      .from("categories")
+      .select("id")
+      .eq("id", category_id)
+      .single()
+
+    if (categoryError || !category) {
+      return NextResponse.json({ error: "Invalid category" }, { status: 400 })
     }
 
-    const { data: product, error } = await supabase.from("products").insert([productData]).select().single()
+    // Create the product
+    const { data: product, error: productError } = await supabase
+      .from("products")
+      .insert({
+        name: name.trim(),
+        description: description?.trim() || "",
+        price: numericPrice,
+        category_id: category_id,
+        seller_id: session.user.id,
+        stock_quantity: numericStock,
+        image_url: image_url || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .select(`
+        *,
+        categories (
+          id,
+          name
+        ),
+        users (
+          id,
+          name
+        )
+      `)
+      .single()
 
-    if (error) {
-      console.error("Error creating product:", error)
-      return NextResponse.json({ error: "Failed to create product" }, { status: 500 })
+    if (productError) {
+      console.error("Error creating product:", productError)
+      return NextResponse.json(
+        {
+          error: "Failed to create product",
+          details: productError.message,
+        },
+        { status: 500 },
+      )
     }
 
-    return NextResponse.json(product, { status: 201 })
+    // Ensure price is properly formatted in response
+    const processedProduct = {
+      ...product,
+      price: Number.parseFloat(product.price) || 0,
+      stock_quantity: Number.parseInt(product.stock_quantity) || 0,
+    }
+
+    return NextResponse.json(processedProduct, { status: 201 })
   } catch (error) {
-    console.error("Product creation error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    console.error("Error in products POST:", error)
+    return NextResponse.json(
+      {
+        error: "Internal server error",
+        details: error.message,
+      },
+      { status: 500 },
+    )
   }
 }
