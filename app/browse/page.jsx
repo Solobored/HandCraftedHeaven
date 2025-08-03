@@ -1,36 +1,33 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo } from "react"
-import { useSearchParams, useRouter } from "next/navigation"
-import Header from "@/components/header"
-import Footer from "@/components/footer"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
 import { Slider } from "@/components/ui/slider"
-import { Search, Filter, Grid, List, ShoppingCart } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Search, Filter, ShoppingCart, Star } from "lucide-react"
+import Image from "next/image"
 import Link from "next/link"
 import { useCart } from "@/contexts/cart-context"
 import { toast } from "@/hooks/use-toast"
+import Header from "@/components/header"
+import Footer from "@/components/footer"
 
 export default function BrowsePage() {
-  const searchParams = useSearchParams()
-  const router = useRouter()
-  const { addToCart } = useCart()
-
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "")
-  const [selectedCategory, setSelectedCategory] = useState(searchParams.get("category") || "all")
-  const [priceRange, setPriceRange] = useState([0, 500])
-  const [sortBy, setSortBy] = useState("newest")
-  const [viewMode, setViewMode] = useState("grid")
+  const [searchTerm, setSearchTerm] = useState("")
+  const [selectedCategory, setSelectedCategory] = useState("all")
+  const [priceRange, setPriceRange] = useState([0, 1000])
+  const [showFilters, setShowFilters] = useState(false)
+  const { addToCart } = useCart()
 
-  // Debounce function
-  const debounce = useCallback((func, wait) => {
+  // Debounced search function
+  const debounce = (func, wait) => {
     let timeout
     return function executedFunction(...args) {
       const later = () => {
@@ -40,376 +37,289 @@ export default function BrowsePage() {
       clearTimeout(timeout)
       timeout = setTimeout(later, wait)
     }
-  }, [])
+  }
 
-  // Debounced search function
-  const debouncedSearch = useCallback(
-    debounce((query, category) => {
-      fetchProducts(query, category)
-    }, 300),
-    [],
-  )
-
-  // Fetch categories
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await fetch("/api/categories")
-        if (response.ok) {
-          const data = await response.json()
-          setCategories(data)
-        }
-      } catch (error) {
-        console.error("Error fetching categories:", error)
-      }
-    }
-    fetchCategories()
-  }, [])
-
-  // Fetch products function
-  const fetchProducts = useCallback(async (search = "", category = "all") => {
-    setLoading(true)
+  const fetchProducts = useCallback(async (search = "", category = "all", minPrice = 0, maxPrice = 1000) => {
     try {
+      setLoading(true)
       const params = new URLSearchParams()
-      if (search && search.trim()) {
+
+      if (search.trim()) {
         params.append("search", search.trim())
       }
-      if (category && category !== "all") {
+      if (category !== "all") {
         params.append("category", category)
       }
-      params.append("limit", "100")
+      if (minPrice > 0) {
+        params.append("min_price", minPrice.toString())
+      }
+      if (maxPrice < 1000) {
+        params.append("max_price", maxPrice.toString())
+      }
 
       const response = await fetch(`/api/products?${params.toString()}`)
-      if (response.ok) {
-        const data = await response.json()
-        console.log("Fetched products:", data) // Debug log
-        setProducts(data || [])
-      } else {
-        console.error("Failed to fetch products")
-        setProducts([])
+      if (!response.ok) {
+        throw new Error("Failed to fetch products")
       }
+
+      const data = await response.json()
+      setProducts(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error("Error fetching products:", error)
       setProducts([])
+      toast({
+        title: "Error",
+        description: "Failed to load products. Please try again.",
+        variant: "destructive",
+      })
     } finally {
       setLoading(false)
     }
   }, [])
 
-  // Initial load
+  const debouncedFetchProducts = useCallback(
+    debounce((search, category, minPrice, maxPrice) => {
+      fetchProducts(search, category, minPrice, maxPrice)
+    }, 500),
+    [fetchProducts],
+  )
+
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch("/api/categories")
+      if (response.ok) {
+        const data = await response.json()
+        setCategories(Array.isArray(data) ? data : [])
+      }
+    } catch (error) {
+      console.error("Error fetching categories:", error)
+      setCategories([])
+    }
+  }
+
   useEffect(() => {
-    fetchProducts(searchQuery, selectedCategory)
-  }, [fetchProducts, searchQuery, selectedCategory])
+    fetchCategories()
+    fetchProducts()
+  }, [fetchProducts])
 
-  // Handle search input change
-  const handleSearchChange = (e) => {
-    const value = e.target.value
-    setSearchQuery(value)
-    debouncedSearch(value, selectedCategory)
-  }
-
-  // Handle category change
-  const handleCategoryChange = (category) => {
-    console.log("Category changed to:", category) // Debug log
-    setSelectedCategory(category)
-    const params = new URLSearchParams(searchParams)
-    if (category !== "all") {
-      params.set("category", category)
-    } else {
-      params.delete("category")
-    }
-    if (searchQuery) {
-      params.set("search", searchQuery)
-    }
-    router.push(`/browse?${params.toString()}`, { scroll: false })
-    fetchProducts(searchQuery, category)
-  }
-
-  // Filter and sort products
-  const filteredAndSortedProducts = useMemo(() => {
-    let filtered = [...products]
-
-    // Filter by price range
-    filtered = filtered.filter((product) => {
-      const price = Number.parseFloat(product.price) || 0
-      return price >= priceRange[0] && price <= priceRange[1]
-    })
-
-    // Sort products
-    switch (sortBy) {
-      case "price-low":
-        filtered.sort((a, b) => Number.parseFloat(a.price) - Number.parseFloat(b.price))
-        break
-      case "price-high":
-        filtered.sort((a, b) => Number.parseFloat(b.price) - Number.parseFloat(a.price))
-        break
-      case "name":
-        filtered.sort((a, b) => a.name.localeCompare(b.name))
-        break
-      case "newest":
-      default:
-        filtered.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
-        break
-    }
-
-    return filtered
-  }, [products, priceRange, sortBy])
+  useEffect(() => {
+    debouncedFetchProducts(searchTerm, selectedCategory, priceRange[0], priceRange[1])
+  }, [searchTerm, selectedCategory, priceRange, debouncedFetchProducts])
 
   const handleAddToCart = (product) => {
-    addToCart({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      image: product.image_url,
-      seller: product.users?.name || "Unknown Seller",
-    })
-
+    addToCart(product, 1)
     toast({
-      title: "Added to Cart",
+      title: "Added to cart",
       description: `${product.name} has been added to your cart.`,
     })
   }
 
-  const clearFilters = () => {
-    setSearchQuery("")
-    setSelectedCategory("all")
-    setPriceRange([0, 500])
-    router.push("/browse")
-    fetchProducts("", "all")
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value)
+  }
+
+  const handleCategoryChange = (value) => {
+    setSelectedCategory(value)
+  }
+
+  const handlePriceRangeChange = (value) => {
+    setPriceRange(value)
   }
 
   return (
     <div className="min-h-screen bg-cream-50">
       <Header />
-
-      <main className="container mx-auto px-4 py-8 mt-4">
-        <div className="mb-8">
-          <h1 className="text-3xl lg:text-4xl font-bold text-sage-900 mb-4">Browse Products</h1>
-          <p className="text-sage-600">Discover unique handcrafted items from talented artisans</p>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Filters Sidebar */}
-          <div className="lg:col-span-1">
-            <Card className="border-sage-200 sticky top-24">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2 mb-6">
-                  <Filter className="w-5 h-5 text-sage-600" />
-                  <h2 className="text-lg font-semibold text-sage-900">Filters</h2>
-                </div>
-
-                {/* Search */}
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-sage-700 mb-2">Search</label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sage-400 w-4 h-4" />
-                    <Input
-                      type="text"
-                      placeholder="Search products..."
-                      value={searchQuery}
-                      onChange={handleSearchChange}
-                      className="pl-10 border-sage-300 focus:border-terracotta-400"
-                    />
-                  </div>
-                </div>
-
-                {/* Category Filter */}
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-sage-700 mb-2">Category</label>
-                  <Select value={selectedCategory} onValueChange={handleCategoryChange}>
-                    <SelectTrigger className="border-sage-300 focus:border-terracotta-400">
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Categories</SelectItem>
-                      {categories.map((category) => (
-                        <SelectItem key={category.id} value={category.slug}>
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Price Range */}
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-sage-700 mb-2">Price Range</label>
-                  <div className="px-2">
-                    <Slider
-                      value={priceRange}
-                      onValueChange={setPriceRange}
-                      max={500}
-                      min={0}
-                      step={10}
-                      className="mb-2"
-                    />
-                    <div className="flex justify-between text-sm text-sage-600">
-                      <span>${priceRange[0]}</span>
-                      <span>${priceRange[1]}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Clear Filters */}
-                <Button
-                  variant="outline"
-                  onClick={clearFilters}
-                  className="w-full border-sage-300 text-sage-700 hover:bg-sage-50 bg-transparent"
-                >
-                  Clear All Filters
-                </Button>
-              </CardContent>
-            </Card>
+      <div className="pt-20">
+        <div className="container mx-auto px-4 py-8">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold text-sage-900 mb-4">Browse Our Collection</h1>
+            <p className="text-lg text-sage-600 max-w-2xl mx-auto">
+              Discover unique handcrafted items from talented artisans around the world
+            </p>
           </div>
 
-          {/* Products Grid */}
-          <div className="lg:col-span-3">
-            {/* Toolbar */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-              <div className="flex items-center gap-4">
-                <p className="text-sage-600">
-                  {loading ? "Loading..." : `${filteredAndSortedProducts.length} products found`}
-                </p>
+          {/* Search and Filters */}
+          <div className="bg-white rounded-lg shadow-sm border border-sage-200 p-6 mb-8">
+            <div className="flex flex-col lg:flex-row gap-4 items-center">
+              {/* Search */}
+              <div className="relative flex-1 w-full">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sage-400 w-4 h-4" />
+                <Input
+                  type="text"
+                  placeholder="Search handcrafted items..."
+                  value={searchTerm}
+                  onChange={handleSearchChange}
+                  className="pl-10 bg-transparent border-sage-300 focus:border-terracotta-500"
+                />
               </div>
 
-              <div className="flex items-center gap-4">
-                {/* Sort */}
-                <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-40 border-sage-300 focus:border-terracotta-400">
-                    <SelectValue />
+              {/* Category Filter */}
+              <div className="w-full lg:w-48">
+                <Select value={selectedCategory} onValueChange={handleCategoryChange}>
+                  <SelectTrigger className="bg-transparent border-sage-300 focus:border-terracotta-500">
+                    <SelectValue placeholder="All Categories" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="newest">Newest First</SelectItem>
-                    <SelectItem value="price-low">Price: Low to High</SelectItem>
-                    <SelectItem value="price-high">Price: High to Low</SelectItem>
-                    <SelectItem value="name">Name: A to Z</SelectItem>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id.toString()}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
-
-                {/* View Mode */}
-                <div className="flex border border-sage-300 rounded-lg">
-                  <Button
-                    variant={viewMode === "grid" ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => setViewMode("grid")}
-                    className={viewMode === "grid" ? "bg-terracotta-600 hover:bg-terracotta-700" : ""}
-                  >
-                    <Grid className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant={viewMode === "list" ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => setViewMode("list")}
-                    className={viewMode === "list" ? "bg-terracotta-600 hover:bg-terracotta-700" : ""}
-                  >
-                    <List className="w-4 h-4" />
-                  </Button>
-                </div>
               </div>
+
+              {/* Filter Toggle */}
+              <Button
+                variant="outline"
+                onClick={() => setShowFilters(!showFilters)}
+                className="bg-transparent border-sage-300 hover:bg-sage-50"
+              >
+                <Filter className="w-4 h-4 mr-2" />
+                Filters
+              </Button>
             </div>
 
-            {/* Products */}
-            {loading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <Card key={i} className="border-sage-200">
-                    <div className="aspect-square bg-sage-100 animate-pulse rounded-t-lg" />
-                    <CardContent className="p-4">
-                      <div className="h-4 bg-sage-100 animate-pulse rounded mb-2" />
-                      <div className="h-3 bg-sage-100 animate-pulse rounded mb-4 w-2/3" />
-                      <div className="h-6 bg-sage-100 animate-pulse rounded w-1/3" />
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : filteredAndSortedProducts.length > 0 ? (
-              <div
-                className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" : "space-y-4"}
-              >
-                {filteredAndSortedProducts.map((product) => (
-                  <Card
-                    key={product.id}
-                    className={`border-sage-200 hover:shadow-lg transition-shadow ${viewMode === "list" ? "flex" : ""}`}
-                  >
-                    <Link href={`/products/${product.id}`} className={viewMode === "list" ? "flex-shrink-0" : ""}>
-                      <div
-                        className={`bg-sage-50 overflow-hidden ${
-                          viewMode === "list" ? "w-48 h-32" : "aspect-square"
-                        } ${viewMode === "grid" ? "rounded-t-lg" : "rounded-l-lg"}`}
-                      >
-                        <img
-                          src={product.image_url || "/placeholder.svg?height=300&width=300&query=handcrafted+product"}
-                          alt={product.name}
-                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                        />
-                      </div>
-                    </Link>
-
-                    <CardContent className={`p-4 ${viewMode === "list" ? "flex-1 flex flex-col justify-between" : ""}`}>
-                      <div className={viewMode === "list" ? "flex-1" : ""}>
-                        <Link href={`/products/${product.id}`}>
-                          <h3 className="font-semibold text-sage-900 mb-2 hover:text-terracotta-600 transition-colors line-clamp-2">
-                            {product.name}
-                          </h3>
-                        </Link>
-
-                        <div className="flex items-center gap-2 mb-2">
-                          <Badge variant="outline" className="text-xs">
-                            {product.categories?.name || "Handcrafted"}
-                          </Badge>
-                        </div>
-
-                        {product.description && (
-                          <p className="text-sm text-sage-600 mb-3 line-clamp-2">{product.description}</p>
-                        )}
-
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-lg font-bold text-terracotta-600">
-                              ${Number.parseFloat(product.price).toFixed(2)}
-                            </p>
-                            <Link
-                              href={`/sellers/${product.seller_id}`}
-                              className="text-xs text-sage-500 hover:text-terracotta-600 transition-colors"
-                            >
-                              by {product.users?.name || "Artisan"}
-                            </Link>
-                          </div>
-
-                          <Button
-                            size="sm"
-                            onClick={(e) => {
-                              e.preventDefault()
-                              handleAddToCart(product)
-                            }}
-                            className="bg-terracotta-600 hover:bg-terracotta-700"
-                            disabled={product.stock === 0}
-                          >
-                            <ShoppingCart className="w-4 h-4 mr-1" />
-                            {viewMode === "list" ? "Add to Cart" : "Add"}
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <div className="w-24 h-24 bg-sage-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Search className="w-12 h-12 text-sage-400" />
+            {/* Advanced Filters */}
+            {showFilters && (
+              <div className="mt-6 pt-6 border-t border-sage-200">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-sage-700 mb-2">
+                      Price Range: ${priceRange[0]} - ${priceRange[1]}
+                    </label>
+                    <Slider
+                      value={priceRange}
+                      onValueChange={handlePriceRangeChange}
+                      max={1000}
+                      min={0}
+                      step={10}
+                      className="w-full"
+                    />
+                  </div>
                 </div>
-                <h3 className="text-xl font-semibold text-sage-900 mb-2">No products found</h3>
-                <p className="text-sage-600 mb-6">Try adjusting your search criteria or browse all categories</p>
-                <Button onClick={clearFilters} className="bg-terracotta-600 hover:bg-terracotta-700">
-                  Clear Filters
-                </Button>
               </div>
             )}
           </div>
-        </div>
-      </main>
 
+          {/* Results */}
+          <div className="mb-6">
+            <p className="text-sage-600">{loading ? "Loading..." : `Showing ${products.length} products`}</p>
+          </div>
+
+          {/* Products Grid */}
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {[...Array(8)].map((_, i) => (
+                <Card key={i} className="border-sage-200">
+                  <CardContent className="p-0">
+                    <Skeleton className="w-full h-48 rounded-t-lg" />
+                    <div className="p-4 space-y-2">
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-4 w-1/2" />
+                      <Skeleton className="h-8 w-full" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : products.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="w-24 h-24 mx-auto mb-4 bg-sage-100 rounded-full flex items-center justify-center">
+                <Search className="w-12 h-12 text-sage-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-sage-900 mb-2">No products found</h3>
+              <p className="text-sage-600 mb-4">
+                Try adjusting your search terms or filters to find what you're looking for.
+              </p>
+              <Button
+                onClick={() => {
+                  setSearchTerm("")
+                  setSelectedCategory("all")
+                  setPriceRange([0, 1000])
+                }}
+                className="bg-terracotta-600 hover:bg-terracotta-700"
+              >
+                Clear Filters
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {products.map((product) => (
+                <Card key={product.id} className="border-sage-200 hover:shadow-lg transition-shadow">
+                  <CardContent className="p-0">
+                    <Link href={`/products/${product.id}`}>
+                      <div className="relative w-full h-48 bg-sage-100 rounded-t-lg overflow-hidden">
+                        <Image
+                          src={product.image_url || "/placeholder.svg?height=200&width=300&query=handcrafted product"}
+                          alt={product.name}
+                          fill
+                          style={{ objectFit: "cover" }}
+                          className="hover:scale-105 transition-transform duration-300"
+                        />
+                        {product.stock <= 5 && product.stock > 0 && (
+                          <Badge className="absolute top-2 right-2 bg-orange-500">Only {product.stock} left</Badge>
+                        )}
+                        {product.stock === 0 && (
+                          <Badge className="absolute top-2 right-2 bg-red-500">Out of Stock</Badge>
+                        )}
+                      </div>
+                    </Link>
+
+                    <div className="p-4">
+                      <Link href={`/products/${product.id}`}>
+                        <h3 className="font-semibold text-sage-900 mb-1 hover:text-terracotta-600 transition-colors">
+                          {product.name}
+                        </h3>
+                      </Link>
+
+                      <p className="text-sm text-sage-600 mb-2">
+                        by{" "}
+                        <Link href={`/sellers/${product.seller_id}`} className="hover:text-terracotta-600">
+                          {product.users?.seller_name || product.users?.full_name || "Unknown Seller"}
+                        </Link>
+                      </p>
+
+                      <div className="flex items-center gap-1 mb-2">
+                        {[...Array(5)].map((_, i) => (
+                          <Star
+                            key={i}
+                            className={`w-3 h-3 ${i < 4 ? "fill-yellow-400 text-yellow-400" : "text-sage-300"}`}
+                          />
+                        ))}
+                        <span className="text-xs text-sage-500 ml-1">(4.0)</span>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <span className="text-lg font-bold text-terracotta-600">
+                          ${Number.parseFloat(product.price).toFixed(2)}
+                        </span>
+                        <Button
+                          size="sm"
+                          onClick={() => handleAddToCart(product)}
+                          disabled={product.stock === 0}
+                          className="bg-terracotta-600 hover:bg-terracotta-700 disabled:opacity-50"
+                        >
+                          <ShoppingCart className="w-3 h-3 mr-1" />
+                          Add
+                        </Button>
+                      </div>
+
+                      {product.categories?.name && (
+                        <Badge variant="secondary" className="mt-2 text-xs">
+                          {product.categories.name}
+                        </Badge>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
       <Footer />
     </div>
   )

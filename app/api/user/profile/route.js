@@ -1,27 +1,25 @@
 import { NextResponse } from "next/server"
+import { supabase } from "@/lib/supabase"
 
-export async function PUT(request) {
+export async function GET(request) {
   try {
-    // For now, we'll skip session validation
-    // const session = await getServerSession()
+    const { searchParams } = new URL(request.url)
+    const userId = searchParams.get("userId")
 
-    const body = await request.json()
-    const { name, email, phone, location, bio, avatar } = body
+    if (!userId) {
+      return NextResponse.json({ error: "User ID is required" }, { status: 400 })
+    }
 
-    // In a real implementation, you would:
-    // 1. Validate the session
-    // 2. Update the user in the database
-    // 3. Return the updated user data
+    const { data: user, error } = await supabase.from("users").select("*").eq("id", userId).single()
 
-    // Simulate successful update
-    await new Promise((resolve) => setTimeout(resolve, 500))
+    if (error) {
+      console.error("Error fetching user profile:", error)
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
+    }
 
-    return NextResponse.json({
-      message: "Profile updated successfully",
-      user: { name, email, phone, location, bio, avatar },
-    })
+    return NextResponse.json(user)
   } catch (error) {
-    console.error("Profile update error:", error)
-    return NextResponse.json({ error: "Failed to update profile" }, { status: 500 })
+    console.error("User profile API error:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

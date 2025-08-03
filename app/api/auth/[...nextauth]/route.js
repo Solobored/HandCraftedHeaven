@@ -1,14 +1,10 @@
 import NextAuth from "next-auth"
-import GoogleProvider from "next-auth/providers/google"
 import CredentialsProvider from "next-auth/providers/credentials"
+import GoogleProvider from "next-auth/providers/google"
 import { supabase } from "@/lib/supabase"
 
-const handler = NextAuth({
+export const authOptions = {
   providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    }),
     CredentialsProvider({
       name: "credentials",
       credentials: {
@@ -21,20 +17,54 @@ const handler = NextAuth({
         }
 
         try {
-          // Check if user exists in our database
-          const { data: user, error } = await supabase.from("users").select("*").eq("email", credentials.email).single()
+          // Sign in with Supabase
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email: credentials.email,
+            password: credentials.password,
+          })
 
-          if (error || !user) {
+          if (error || !data.user) {
             return null
           }
 
-          // In a real app, you'd verify the password here
-          // For now, we'll just check if the user exists
+          // Get user profile from database
+          const { data: userProfile, error: profileError } = await supabase
+            .from("users")
+            .select("*")
+            .eq("id", data.user.id)
+            .single()
+
+          if (profileError || !userProfile) {
+            // If no profile exists, create one
+            const { error: insertError } = await supabase.from("users").insert([
+              {
+                id: data.user.id,
+                email: data.user.email,
+                full_name: data.user.user_metadata?.full_name || "",
+                name: data.user.user_metadata?.name || "",
+                role: "buyer",
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              },
+            ])
+
+            if (insertError) {
+              console.error("Error creating user profile:", insertError)
+            }
+
+            return {
+              id: data.user.id,
+              email: data.user.email,
+              name: data.user.user_metadata?.name || "",
+              role: "buyer",
+            }
+          }
+
           return {
-            id: user.id,
-            email: user.email,
-            name: user.full_name || user.name,
-            role: user.role,
+            id: userProfile.id,
+            email: userProfile.email,
+            name: userProfile.name || userProfile.full_name,
+            role: userProfile.role,
           }
         } catch (error) {
           console.error("Auth error:", error)
@@ -42,76 +72,80 @@ const handler = NextAuth({
         }
       },
     }),
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    }),
   ],
   callbacks: {
-    async signIn({ user, account, profile }) {
-      if (account.provider === "google") {
-        try {
-          // Check if user exists in our database
-          const { data: existingUser, error: fetchError } = await supabase
-            .from("users")
-            .select("*")
-            .eq("email", user.email)
-            .single()
-
-          if (fetchError && fetchError.code !== "PGRST116") {
-            console.error("Error fetching user:", fetchError)
-            return false
-          }
-
-          if (!existingUser) {
-            // Create new user in our database
-            const { error: insertError } = await supabase.from("users").insert([
-              {
-                email: user.email,
-                full_name: user.name,
-                avatar_url: user.image,
-                role: "buyer",
-                created_at: new Date().toISOString(),
-              },
-            ])
-
-            if (insertError) {
-              console.error("Error creating user:", insertError)
-              return false
-            }
-          }
-
-          return true
-        } catch (error) {
-          console.error("Sign in error:", error)
-          return false
-        }
-      }
-      return true
-    },
     async jwt({ token, user, account }) {
-      if (account && user) {
-        // Fetch user data from our database
-        const { data: userData, error } = await supabase.from("users").select("*").eq("email", user.email).single()
-
-        if (!error && userData) {
-          token.role = userData.role
-          token.userId = userData.id
-          token.name = userData.full_name || userData.name
-        }
+      if (user) {
+        token.role = user.role
       }
       return token
     },
     async session({ session, token }) {
       if (token) {
+        session.user.id = token.sub
         session.user.role = token.role
-        session.user.id = token.userId
-        session.user.name = token.name
       }
       return session
+    },
+    async signIn({ user, account, profile }) {
+      if (account?.provider === "google") {
+        try {
+          // Check if user exists in our database
+          const { data: existingUser, error } = await supabase
+            .from("users")
+            .select("*")
+            .eq("email", user.email)
+            .single()
+
+          if (error && error.code !== "PGRST116") {
+            console.error("Error checking user:", error)
+            return false
+          }
+
+          if (!existingUser) {
+            // Create new user profile
+            const { error: insertError } = await supabase.from("users").insert([
+              {
+                id: user.id,
+                email: user.email,
+                full_name: user.name,
+                name: user.name,
+                role: "buyer",
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              },
+            ])
+
+            if (insertError) {
+              console.error("Error creating Google user profile:", insertError)
+              return false
+            }
+
+            user.role = "buyer"
+          } else {
+            user.role = existingUser.role
+          }
+        } catch (error) {
+          console.error("Google sign-in error:", error)
+          return false
+        }
+      }
+      return true
     },
   },
   pages: {
     signIn: "/auth/login",
     signUp: "/auth/register",
   },
+  session: {
+    strategy: "jwt",
+  },
   secret: process.env.NEXTAUTH_SECRET,
-})
+}
 
+const handler = NextAuth(authOptions)
 export { handler as GET, handler as POST }

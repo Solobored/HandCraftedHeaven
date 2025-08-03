@@ -1,48 +1,52 @@
 import { NextResponse } from "next/server"
+import { supabase } from "@/lib/supabase"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
-import { supabase } from "@/lib/supabase"
 
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url)
-    const search = searchParams.get("search")
+    const limit = searchParams.get("limit")
     const category = searchParams.get("category")
-    const sellerId = searchParams.get("seller_id")
-    const limit = searchParams.get("limit") || "50"
+    const seller_id = searchParams.get("seller_id")
+    const search = searchParams.get("search")
 
     let query = supabase
       .from("products")
-      .select(
-        `
+      .select(`
         *,
         categories (
           id,
-          name,
-          slug
+          name
         ),
         users (
           id,
-          name,
+          full_name,
           seller_name
         )
-      `,
-      )
-      .order("created_at", { ascending: false })
-      .limit(Number.parseInt(limit))
+      `)
+      .eq("status", "approved")
 
     // Apply filters
-    if (search) {
-      query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`)
-    }
-
     if (category && category !== "all") {
       query = query.eq("category_id", category)
     }
 
-    if (sellerId) {
-      query = query.eq("seller_id", sellerId)
+    if (seller_id) {
+      query = query.eq("seller_id", seller_id)
     }
+
+    if (search) {
+      query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`)
+    }
+
+    // Apply limit
+    if (limit) {
+      query = query.limit(Number.parseInt(limit))
+    }
+
+    // Order by created_at descending
+    query = query.order("created_at", { ascending: false })
 
     const { data: products, error } = await query
 
@@ -53,7 +57,7 @@ export async function GET(request) {
 
     return NextResponse.json(products || [])
   } catch (error) {
-    console.error("Error in GET /api/products:", error)
+    console.error("Products API error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
@@ -62,40 +66,73 @@ export async function POST(request) {
   try {
     const session = await getServerSession(authOptions)
 
-    if (!session || !session.user) {
+    if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { name, description, price, stock, image_url, category_id } = await request.json()
+    const body = await request.json()
+    const { name, description, price, stock, category_id, image_url, seller_id } = body
 
     // Validation
-    if (!name || !description || !price || stock === undefined || !category_id) {
-      return NextResponse.json({ error: "All fields are required" }, { status: 400 })
+    if (!name || !description || !price || !category_id) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    // Create product using service role client to bypass RLS
-    const { data: product, error } = await supabase.from("products").insert([
-      {
-        name: name.trim(),
-        description: description.trim(),
-        price: Number.parseFloat(price),
-        stock: Number.parseInt(stock),
-        stock_quantity: Number.parseInt(stock),
-        image_url: image_url || null,
-        category_id: category_id,
-        seller_id: session.user.id,
-        created_at: new Date().toISOString(),
-      },
-    ])
+    const parsedPrice = Number.parseFloat(price)
+    const parsedStock = Number.parseInt(stock) || 0
+
+    if (isNaN(parsedPrice) || parsedPrice <= 0) {
+      return NextResponse.json({ error: "Invalid price" }, { status: 400 })
+    }
+
+    // Use seller_id from request if provided (for admin), otherwise use session user id
+    const finalSellerId = seller_id || session.user.id
+
+    // Verify user has permission to create products for this seller
+    if (session.user.role !== "admin" && finalSellerId !== session.user.id) {
+      return NextResponse.json({ error: "Unauthorized to create products for this seller" }, { status: 403 })
+    }
+
+    // Verify the seller exists and has seller role
+    const { data: seller, error: sellerError } = await supabase
+      .from("users")
+      .select("id, role")
+      .eq("id", finalSellerId)
+      .single()
+
+    if (sellerError || !seller) {
+      return NextResponse.json({ error: "Seller not found" }, { status: 404 })
+    }
+
+    if (seller.role !== "seller" && seller.role !== "admin") {
+      return NextResponse.json({ error: "User is not a seller" }, { status: 403 })
+    }
+
+    // Create the product - keep category_id as string since it's a UUID
+    const productData = {
+      name: name.trim(),
+      description: description.trim(),
+      price: parsedPrice,
+      stock: parsedStock,
+      stock_quantity: parsedStock,
+      category_id: category_id, // Keep as string for UUID
+      seller_id: finalSellerId,
+      image_url: image_url || null,
+      status: "approved",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }
+
+    const { data: product, error } = await supabase.from("products").insert([productData]).select().single()
 
     if (error) {
-      console.error("Supabase error creating product:", error)
+      console.error("Error creating product:", error)
       return NextResponse.json({ error: "Failed to create product" }, { status: 500 })
     }
 
-    return NextResponse.json({ message: "Product created successfully", product }, { status: 201 })
+    return NextResponse.json(product, { status: 201 })
   } catch (error) {
-    console.error("Error in POST /api/products:", error)
+    console.error("Product creation error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

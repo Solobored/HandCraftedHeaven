@@ -19,6 +19,17 @@ export async function POST(request) {
       return NextResponse.json({ error: "Invalid role specified" }, { status: 400 })
     }
 
+    // Check if user already exists
+    const { data: existingUser } = await supabase
+      .from("users")
+      .select("email")
+      .eq("email", email.toLowerCase().trim())
+      .single()
+
+    if (existingUser) {
+      return NextResponse.json({ error: "User with this email already exists" }, { status: 400 })
+    }
+
     // Sign up the user with Supabase Auth
     const { data, error } = await supabase.auth.signUp({
       email: email.toLowerCase().trim(),
@@ -38,27 +49,41 @@ export async function POST(request) {
     }
 
     if (data.user) {
-      // Also insert into public.users table with role
-      const { error: insertError } = await supabase.from("users").insert([
-        {
-          id: data.user.id,
-          email: email.toLowerCase().trim(),
-          full_name: name.trim(),
-          name: name.trim(),
-          seller_name: role === "seller" ? name.trim() : null,
-          role: role,
-          created_at: new Date().toISOString(),
-        },
-      ])
+      // Wait a moment for the trigger to potentially create the user
+      await new Promise((resolve) => setTimeout(resolve, 1000))
 
-      if (insertError) {
-        console.error("Error inserting user profile:", insertError)
-        // Don't fail the registration if profile insert fails
+      // Try to insert the user profile manually if trigger didn't work
+      try {
+        const { error: insertError } = await supabase.from("users").upsert(
+          [
+            {
+              id: data.user.id,
+              email: email.toLowerCase().trim(),
+              full_name: name.trim(),
+              name: name.trim(),
+              seller_name: role === "seller" ? name.trim() : null,
+              role: role,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+          ],
+          {
+            onConflict: "id",
+          },
+        )
+
+        if (insertError) {
+          console.error("Error inserting user profile:", insertError)
+          // Don't fail registration, the user was created in auth
+        }
+      } catch (profileError) {
+        console.error("Profile creation error:", profileError)
+        // Continue anyway
       }
 
       return NextResponse.json(
         {
-          message: "User registered successfully",
+          message: "User registered successfully. Please check your email to verify your account.",
           user: {
             id: data.user.id,
             email: data.user.email,

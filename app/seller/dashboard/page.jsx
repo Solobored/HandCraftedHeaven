@@ -3,41 +3,41 @@
 import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { toast } from "@/hooks/use-toast"
-import { Plus, Package, DollarSign, TrendingUp, Eye, Edit, Trash2 } from "lucide-react"
-import Link from "next/link"
+import { Badge } from "@/components/ui/badge"
+import { Plus, Package, TrendingUp, DollarSign, Eye, Edit } from "lucide-react"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
+import { toast } from "@/hooks/use-toast"
 
 export default function SellerDashboard() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [loading, setLoading] = useState(true)
-  const [showAddForm, setShowAddForm] = useState(false)
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
   const [stats, setStats] = useState({
     totalProducts: 0,
     totalSales: 0,
     totalRevenue: 0,
+    totalOrders: 0,
   })
+  const [showAddProductForm, setShowAddProductForm] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     price: "",
     stock: "",
-    image_url: "",
     category_id: "",
+    image_url: "",
   })
-  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -45,7 +45,11 @@ export default function SellerDashboard() {
       return
     }
 
-    if (status === "authenticated" && session?.user) {
+    if (status === "authenticated") {
+      if (session?.user?.role !== "seller" && session?.user?.role !== "admin") {
+        router.push("/dashboard")
+        return
+      }
       fetchSellerData()
     }
   }, [status, session, router])
@@ -66,7 +70,7 @@ export default function SellerDashboard() {
       const response = await fetch(`/api/products?seller_id=${session.user.id}`)
       if (response.ok) {
         const data = await response.json()
-        setProducts(Array.isArray(data) ? data : [])
+        setProducts(data || [])
       }
     } catch (error) {
       console.error("Error fetching products:", error)
@@ -78,7 +82,7 @@ export default function SellerDashboard() {
       const response = await fetch("/api/categories")
       if (response.ok) {
         const data = await response.json()
-        setCategories(Array.isArray(data) ? data : [])
+        setCategories(data || [])
       }
     } catch (error) {
       console.error("Error fetching categories:", error)
@@ -87,11 +91,19 @@ export default function SellerDashboard() {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch("/api/seller/stats")
-      if (response.ok) {
-        const data = await response.json()
-        setStats(data)
-      }
+      // For now, calculate stats from products
+      const totalProducts = products.length
+      const totalRevenue = products.reduce(
+        (sum, product) => sum + product.price * (product.stock_quantity - product.stock),
+        0,
+      )
+
+      setStats({
+        totalProducts,
+        totalSales: 0, // This would come from orders
+        totalRevenue,
+        totalOrders: 0, // This would come from orders
+      })
     } catch (error) {
       console.error("Error fetching stats:", error)
     }
@@ -108,30 +120,35 @@ export default function SellerDashboard() {
     try {
       const response = await fetch("/api/products", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...formData,
+          seller_id: session.user.id,
+        }),
       })
+
+      const data = await response.json()
 
       if (response.ok) {
         toast({
           title: "Success!",
           description: "Product added successfully.",
         })
+
+        // Reset form and refresh data
         setFormData({
           name: "",
           description: "",
           price: "",
           stock: "",
-          image_url: "",
           category_id: "",
+          image_url: "",
         })
-        setShowAddForm(false)
-        fetchProducts() // Refresh products list
+        setShowAddProductForm(false)
+        fetchProducts()
+        fetchStats()
       } else {
-        const errorData = await response.json()
-        throw new Error(errorData.error || "Failed to add product")
+        throw new Error(data.error || "Failed to add product")
       }
     } catch (error) {
       console.error("Error adding product:", error)
@@ -156,7 +173,7 @@ export default function SellerDashboard() {
     )
   }
 
-  if (status === "unauthenticated") {
+  if (status === "unauthenticated" || (session?.user?.role !== "seller" && session?.user?.role !== "admin")) {
     return null
   }
 
@@ -168,25 +185,28 @@ export default function SellerDashboard() {
           <div className="flex justify-between items-center mb-8">
             <div>
               <h1 className="text-3xl font-bold text-sage-900">Seller Dashboard</h1>
-              <p className="text-sage-600 mt-2">Manage your products and track your sales</p>
+              <p className="text-sage-600 mt-2">Manage your products and sales</p>
             </div>
-            <Button onClick={() => setShowAddForm(!showAddForm)} className="bg-terracotta-600 hover:bg-terracotta-700">
+            <Button
+              onClick={() => setShowAddProductForm(!showAddProductForm)}
+              className="bg-terracotta-600 hover:bg-terracotta-700"
+            >
               <Plus className="w-4 h-4 mr-2" />
               Add New Product
             </Button>
           </div>
 
           {/* Add Product Form */}
-          {showAddForm && (
-            <Card className="mb-8 border-sage-200">
+          {showAddProductForm && (
+            <Card className="border-sage-200 mb-8">
               <CardHeader>
                 <CardTitle className="text-sage-900">Add New Product</CardTitle>
-                <CardDescription>Fill in the details to add a new product to your store</CardDescription>
+                <CardDescription>Create a new product listing for your store</CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
+                    <div className="space-y-2">
                       <Label htmlFor="name" className="text-sage-700">
                         Product Name
                       </Label>
@@ -201,7 +221,7 @@ export default function SellerDashboard() {
                       />
                     </div>
 
-                    <div>
+                    <div className="space-y-2">
                       <Label htmlFor="price" className="text-sage-700">
                         Price ($)
                       </Label>
@@ -209,6 +229,7 @@ export default function SellerDashboard() {
                         id="price"
                         type="number"
                         step="0.01"
+                        min="0"
                         value={formData.price}
                         onChange={(e) => handleInputChange("price", e.target.value)}
                         className="bg-transparent border-sage-300 focus:border-terracotta-500"
@@ -217,13 +238,14 @@ export default function SellerDashboard() {
                       />
                     </div>
 
-                    <div>
+                    <div className="space-y-2">
                       <Label htmlFor="stock" className="text-sage-700">
                         Stock Quantity
                       </Label>
                       <Input
                         id="stock"
                         type="number"
+                        min="0"
                         value={formData.stock}
                         onChange={(e) => handleInputChange("stock", e.target.value)}
                         className="bg-transparent border-sage-300 focus:border-terracotta-500"
@@ -232,7 +254,7 @@ export default function SellerDashboard() {
                       />
                     </div>
 
-                    <div>
+                    <div className="space-y-2">
                       <Label htmlFor="category" className="text-sage-700">
                         Category
                       </Label>
@@ -241,20 +263,34 @@ export default function SellerDashboard() {
                         onValueChange={(value) => handleInputChange("category_id", value)}
                       >
                         <SelectTrigger className="bg-transparent border-sage-300 focus:border-terracotta-500">
-                          <SelectValue placeholder="Select a category" />
+                          <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                         <SelectContent>
                           {categories.map((category) => (
-                            <SelectItem key={category.id} value={category.id}>
+                            <SelectItem key={category.id} value={category.id.toString()}>
                               {category.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
+
+                    <div className="space-y-2 md:col-span-2">
+                      <Label htmlFor="image_url" className="text-sage-700">
+                        Image URL (optional)
+                      </Label>
+                      <Input
+                        id="image_url"
+                        type="url"
+                        value={formData.image_url}
+                        onChange={(e) => handleInputChange("image_url", e.target.value)}
+                        className="bg-transparent border-sage-300 focus:border-terracotta-500"
+                        placeholder="https://example.com/image.jpg"
+                      />
+                    </div>
                   </div>
 
-                  <div>
+                  <div className="space-y-2">
                     <Label htmlFor="description" className="text-sage-700">
                       Description
                     </Label>
@@ -264,22 +300,8 @@ export default function SellerDashboard() {
                       onChange={(e) => handleInputChange("description", e.target.value)}
                       className="bg-transparent border-sage-300 focus:border-terracotta-500"
                       placeholder="Describe your product..."
-                      rows={3}
+                      rows={4}
                       required
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="image_url" className="text-sage-700">
-                      Image URL (optional)
-                    </Label>
-                    <Input
-                      id="image_url"
-                      type="url"
-                      value={formData.image_url}
-                      onChange={(e) => handleInputChange("image_url", e.target.value)}
-                      className="bg-transparent border-sage-300 focus:border-terracotta-500"
-                      placeholder="https://example.com/image.jpg"
                     />
                   </div>
 
@@ -290,7 +312,7 @@ export default function SellerDashboard() {
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => setShowAddForm(false)}
+                      onClick={() => setShowAddProductForm(false)}
                       className="bg-transparent border-sage-300 hover:bg-sage-50"
                     >
                       Cancel
@@ -301,183 +323,144 @@ export default function SellerDashboard() {
             </Card>
           )}
 
-          <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="products">Products</TabsTrigger>
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <Card className="border-sage-200">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-sage-600">Total Products</CardTitle>
+                <Package className="h-4 w-4 text-sage-400" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-sage-900">{stats.totalProducts}</div>
+                <p className="text-xs text-sage-600">Listed products</p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-sage-200">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-sage-600">Total Sales</CardTitle>
+                <TrendingUp className="h-4 w-4 text-sage-400" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-sage-900">{stats.totalSales}</div>
+                <p className="text-xs text-sage-600">Items sold</p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-sage-200">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-sage-600">Revenue</CardTitle>
+                <DollarSign className="h-4 w-4 text-sage-400" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-sage-900">${stats.totalRevenue.toFixed(2)}</div>
+                <p className="text-xs text-sage-600">Total earnings</p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-sage-200">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-sage-600">Orders</CardTitle>
+                <Package className="h-4 w-4 text-sage-400" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-sage-900">{stats.totalOrders}</div>
+                <p className="text-xs text-sage-600">Pending orders</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Tabs defaultValue="products" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="products">My Products</TabsTrigger>
               <TabsTrigger value="orders">Orders</TabsTrigger>
               <TabsTrigger value="analytics">Analytics</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="overview" className="space-y-6">
-              {/* Stats Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card className="border-sage-200">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium text-sage-600">Total Products</CardTitle>
-                    <Package className="h-4 w-4 text-sage-400" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-sage-900">{products.length}</div>
-                    <p className="text-xs text-sage-600">Active listings</p>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-sage-200">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium text-sage-600">Total Sales</CardTitle>
-                    <TrendingUp className="h-4 w-4 text-sage-400" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-sage-900">{stats.totalSales}</div>
-                    <p className="text-xs text-sage-600">Items sold</p>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-sage-200">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium text-sage-600">Revenue</CardTitle>
-                    <DollarSign className="h-4 w-4 text-sage-400" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-sage-900">${stats.totalRevenue}</div>
-                    <p className="text-xs text-sage-600">Total earned</p>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Quick Actions */}
+            <TabsContent value="products" className="space-y-6">
               <Card className="border-sage-200">
                 <CardHeader>
-                  <CardTitle className="text-sage-900">Quick Actions</CardTitle>
+                  <CardTitle className="text-sage-900">Your Products</CardTitle>
+                  <CardDescription>Manage your product listings</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Button
-                      onClick={() => setShowAddForm(true)}
-                      className="h-20 flex flex-col gap-2 bg-terracotta-600 hover:bg-terracotta-700"
-                    >
-                      <Plus className="w-6 h-6" />
-                      <span className="text-sm">Add New Product</span>
-                    </Button>
-
-                    <Link href="/seller/orders">
+                  {products.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Package className="w-12 h-12 text-sage-300 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-sage-900 mb-2">No products yet</h3>
+                      <p className="text-sage-600 mb-4">Start by adding your first product to your store.</p>
                       <Button
-                        variant="outline"
-                        className="w-full h-20 flex flex-col gap-2 bg-transparent border-sage-300 hover:bg-sage-50"
+                        onClick={() => setShowAddProductForm(true)}
+                        className="bg-terracotta-600 hover:bg-terracotta-700"
                       >
-                        <Package className="w-6 h-6 text-sage-600" />
-                        <span className="text-sm">Manage Orders</span>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Your First Product
                       </Button>
-                    </Link>
-
-                    <Link href="/profile">
-                      <Button
-                        variant="outline"
-                        className="w-full h-20 flex flex-col gap-2 bg-transparent border-sage-300 hover:bg-sage-50"
-                      >
-                        <TrendingUp className="w-6 h-6 text-sage-600" />
-                        <span className="text-sm">View Analytics</span>
-                      </Button>
-                    </Link>
-                  </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {products.map((product) => (
+                        <div key={product.id} className="border border-sage-200 rounded-lg p-4">
+                          <div className="aspect-square bg-sage-100 rounded-lg mb-3 overflow-hidden">
+                            <img
+                              src={product.image_url || "/placeholder.svg?height=150&width=150&query=product"}
+                              alt={product.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <h4 className="font-medium text-sage-900 mb-1 line-clamp-1">{product.name}</h4>
+                          <p className="text-sm text-sage-600 mb-2">${Number.parseFloat(product.price).toFixed(2)}</p>
+                          <div className="flex items-center justify-between mb-3">
+                            <Badge variant={product.stock > 0 ? "default" : "destructive"}>
+                              {product.stock > 0 ? `${product.stock} in stock` : "Out of stock"}
+                            </Badge>
+                            <Badge variant="outline">{product.status}</Badge>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button size="sm" variant="outline" className="flex-1 bg-transparent">
+                              <Eye className="w-3 h-3 mr-1" />
+                              View
+                            </Button>
+                            <Button size="sm" variant="outline" className="flex-1 bg-transparent">
+                              <Edit className="w-3 h-3 mr-1" />
+                              Edit
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
-            </TabsContent>
-
-            <TabsContent value="products" className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-sage-900">Your Products</h2>
-                <Button onClick={() => setShowAddForm(true)} className="bg-terracotta-600 hover:bg-terracotta-700">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add New Product
-                </Button>
-              </div>
-
-              {products.length === 0 ? (
-                <Card className="border-sage-200">
-                  <CardContent className="text-center py-12">
-                    <Package className="w-16 h-16 text-sage-300 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-sage-900 mb-2">No products yet</h3>
-                    <p className="text-sage-600 mb-4">Start by adding your first product to your store.</p>
-                    <Button onClick={() => setShowAddForm(true)} className="bg-terracotta-600 hover:bg-terracotta-700">
-                      Add Your First Product
-                    </Button>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {products.map((product) => (
-                    <Card key={product.id} className="border-sage-200">
-                      <CardContent className="p-4">
-                        <div className="aspect-square bg-sage-100 rounded-lg mb-4 overflow-hidden">
-                          <img
-                            src={product.image_url || "/placeholder.svg?height=200&width=200&query=product"}
-                            alt={product.name}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <h3 className="font-semibold text-sage-900 mb-2">{product.name}</h3>
-                        <p className="text-sm text-sage-600 mb-2 line-clamp-2">{product.description}</p>
-                        <div className="flex justify-between items-center mb-4">
-                          <span className="text-lg font-bold text-terracotta-600">${product.price}</span>
-                          <Badge variant={product.stock > 0 ? "default" : "destructive"}>
-                            {product.stock > 0 ? `${product.stock} in stock` : "Out of stock"}
-                          </Badge>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button size="sm" variant="outline" className="flex-1 bg-transparent">
-                            <Eye className="w-3 h-3 mr-1" />
-                            View
-                          </Button>
-                          <Button size="sm" variant="outline" className="flex-1 bg-transparent">
-                            <Edit className="w-3 h-3 mr-1" />
-                            Edit
-                          </Button>
-                          <Button size="sm" variant="outline" className="bg-transparent text-red-600 hover:bg-red-50">
-                            <Trash2 className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
             </TabsContent>
 
             <TabsContent value="orders" className="space-y-6">
               <Card className="border-sage-200">
                 <CardHeader>
                   <CardTitle className="text-sage-900">Recent Orders</CardTitle>
+                  <CardDescription>Manage customer orders</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="text-center py-8">
-                    <Package className="w-12 h-12 text-sage-300 mx-auto mb-4" />
+                    <TrendingUp className="w-12 h-12 text-sage-300 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-sage-900 mb-2">No orders yet</h3>
-                    <p className="text-sage-600">Orders for your products will appear here.</p>
+                    <p className="text-sage-600">Orders will appear here when customers purchase your products.</p>
                   </div>
                 </CardContent>
               </Card>
             </TabsContent>
 
             <TabsContent value="analytics" className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-sage-900">Analytics</h2>
-                <Button onClick={() => setShowAddForm(true)} className="bg-terracotta-600 hover:bg-terracotta-700">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add New Product
-                </Button>
-              </div>
-
               <Card className="border-sage-200">
                 <CardHeader>
                   <CardTitle className="text-sage-900">Sales Analytics</CardTitle>
+                  <CardDescription>Track your performance</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="text-center py-8">
                     <TrendingUp className="w-12 h-12 text-sage-300 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-sage-900 mb-2">Analytics coming soon</h3>
-                    <p className="text-sage-600">Detailed analytics and insights will be available here.</p>
+                    <p className="text-sage-600">Detailed analytics will be available once you start making sales.</p>
                   </div>
                 </CardContent>
               </Card>
