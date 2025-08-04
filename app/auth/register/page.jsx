@@ -81,9 +81,12 @@ export default function RegisterPage() {
       if (response.ok) {
         toast({
           title: "Success!",
-          description: `Account created successfully as ${formData.role}. Please sign in.`,
+          description: `Account created successfully as ${formData.role}. ${data.message || 'Please sign in.'}`,
         })
-        router.push("/auth/login")
+        // Wait a moment before redirecting to ensure the user profile is created
+        setTimeout(() => {
+          router.push("/auth/login")
+        }, 1500)
       } else {
         toast({
           title: "Error",
