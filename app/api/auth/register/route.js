@@ -15,7 +15,7 @@ export async function POST(request) {
     }
 
     // Validate role
-    if (!["buyer", "seller"].includes(role)) {
+    if (!["buyer", "seller", "admin"].includes(role)) {
       return NextResponse.json({ error: "Invalid role specified" }, { status: 400 })
     }
 
