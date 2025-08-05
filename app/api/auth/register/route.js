@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { supabase, supabaseAdmin } from "@/lib/supabase"
 
 export async function POST(request) {
   try {
@@ -20,7 +20,7 @@ export async function POST(request) {
     }
 
     // Check if user already exists
-    const { data: existingUser } = await supabase
+    const { data: existingUser } = await supabaseAdmin
       .from("users")
       .select("email")
       .eq("email", email.toLowerCase().trim())
@@ -40,6 +40,7 @@ export async function POST(request) {
           name: name.trim(),
           role: role,
         },
+        emailRedirectTo: undefined, // Disable email confirmation redirect
       },
     })
 
@@ -54,7 +55,7 @@ export async function POST(request) {
 
       // Try to insert the user profile manually if trigger didn't work
       try {
-        const { data: userProfile, error: insertError } = await supabase.from("users").upsert(
+        const { data: userProfile, error: insertError } = await supabaseAdmin.from("users").upsert(
           [
             {
               id: data.user.id,
@@ -70,7 +71,9 @@ export async function POST(request) {
           {
             onConflict: "id",
           },
-        ).select().single()
+        )
+        .select()
+        .single()
 
         if (insertError) {
           console.error("Error inserting user profile:", insertError)
@@ -85,7 +88,7 @@ export async function POST(request) {
 
       return NextResponse.json(
         {
-          message: "User registered successfully. Please check your email to verify your account.",
+          message: "User registered successfully. You can now sign in.",
           user: {
             id: data.user.id,
             email: data.user.email,

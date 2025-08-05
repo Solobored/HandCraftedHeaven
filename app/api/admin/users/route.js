@@ -2,7 +2,9 @@ import { NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabase"
 
 export async function GET() {
-  const { data, error } = await supabaseAdmin.from("users").select("id, email, name, role, created_at")
+  const { data, error } = await supabaseAdmin
+    .from("users")
+    .select("id, email, name, full_name, role, created_at")
 
   if (error) {
     console.error("Error fetching users for admin:", error)
