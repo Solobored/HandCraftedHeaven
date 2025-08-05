@@ -230,7 +230,7 @@ export default function ProductDetailPage({ params }) {
     product.images && product.images.length > 0
       ? product.images
       : [product.image_url || "/placeholder.svg?height=600&width=600"]
-  const stock = product.stock_quantity || product.stock || 0
+  const stock = product.stock_quantity ?? product.stock ?? 0
   const averageRating = product.average_rating || 0
   const reviewCount = product.review_count || 0
   const hasUserReviewed = reviews.some((review) => review.user_id === session?.user?.id)

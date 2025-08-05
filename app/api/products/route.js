@@ -111,7 +111,7 @@ export async function POST(request) {
     // Get user profile to check if they're a seller or admin
     const { data: userProfile, error: userError } = await supabase
       .from("users")
-      .select("id, role")
+      .select("id, role, name, full_name")
       .eq("id", session.user.id)
       .single()
 
@@ -141,6 +141,21 @@ export async function POST(request) {
       return NextResponse.json({ error: "Invalid category" }, { status: 400 })
     }
 
+    // For admin users, allow them to specify a different seller_id
+    let actualSellerId = session.user.id
+    if (userProfile.role === "admin" && body.seller_id) {
+      // Verify the specified seller exists and is a seller
+      const { data: specifiedSeller, error: sellerError } = await supabase
+        .from("users")
+        .select("id, role")
+        .eq("id", body.seller_id)
+        .single()
+      
+      if (!sellerError && specifiedSeller && (specifiedSeller.role === "seller" || specifiedSeller.role === "admin")) {
+        actualSellerId = body.seller_id
+      }
+    }
+
     // Create the product
     const { data: product, error: productError } = await supabase
       .from("products")
@@ -149,10 +164,11 @@ export async function POST(request) {
         description: description?.trim() || "",
         price: numericPrice,
         category_id: category_id,
-        seller_id: session.user.id,
+        seller_id: actualSellerId,
         stock: numericStock,
         stock_quantity: numericStock,
         image_url: image_url || null,
+        status: userProfile.role === "admin" ? "approved" : "pending",
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })

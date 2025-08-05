@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { supabase, supabaseAdmin } from "@/lib/supabase"
 
 export async function POST(request) {
   try {
@@ -20,7 +20,7 @@ export async function POST(request) {
     }
 
     // Check if user already exists
-    const { data: existingUser } = await supabase
+    const { data: existingUser } = await supabaseAdmin
       .from("users")
       .select("email")
       .eq("email", email.toLowerCase().trim())
@@ -40,6 +40,7 @@ export async function POST(request) {
           name: name.trim(),
           role: role,
         },
+        emailRedirectTo: undefined, // Disable email confirmation redirect
       },
     })
 
@@ -52,9 +53,9 @@ export async function POST(request) {
       // Wait a moment for the trigger to potentially create the user
       await new Promise((resolve) => setTimeout(resolve, 1000))
 
-      // Try to insert the user profile manually if trigger didn't work
+      // Always try to insert/update the user profile to ensure it exists
       try {
-        const { data: userProfile, error: insertError } = await supabase.from("users").upsert(
+        const { data: userProfile, error: insertError } = await supabaseAdmin.from("users").upsert(
           [
             {
               id: data.user.id,
@@ -69,23 +70,26 @@ export async function POST(request) {
           ],
           {
             onConflict: "id",
+            ignoreDuplicates: false,
           },
-        ).select().single()
+        )
+        .select()
+        .single()
 
         if (insertError) {
           console.error("Error inserting user profile:", insertError)
-          // Don't fail registration, the user was created in auth
+          return NextResponse.json({ error: "Failed to create user profile: " + insertError.message }, { status: 500 })
         }
 
         console.log("User profile created:", userProfile)
       } catch (profileError) {
         console.error("Profile creation error:", profileError)
-        // Continue anyway
+        return NextResponse.json({ error: "Failed to create user profile" }, { status: 500 })
       }
 
       return NextResponse.json(
         {
-          message: "User registered successfully. Please check your email to verify your account.",
+          message: "User registered successfully. You can now sign in.",
           user: {
             id: data.user.id,
             email: data.user.email,

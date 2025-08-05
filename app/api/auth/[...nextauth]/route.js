@@ -1,7 +1,7 @@
 import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import GoogleProvider from "next-auth/providers/google"
-import { supabase } from "@/lib/supabase"
+import { supabase, supabaseAdmin } from "@/lib/supabase"
 
 export const authOptions = {
   providers: [
@@ -18,37 +18,41 @@ export const authOptions = {
 
         try {
           // Sign in with Supabase
-          const { data, error } = await supabase.auth.signInWithPassword({
+          const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
             email: credentials.email,
             password: credentials.password,
           })
 
-          if (error || !data.user) {
-            console.error("Supabase auth error:", error)
+          if (authError || !authData.user) {
+            console.error("Supabase auth error:", authError)
             return null
           }
 
           // Get user profile from database
-          const { data: userProfile, error: profileError } = await supabase
+          const { data: userProfile, error: profileError } = await supabaseAdmin
             .from("users")
             .select("*")
-            .eq("id", data.user.id)
+            .eq("id", authData.user.id)
             .single()
 
           if (profileError || !userProfile) {
             console.error("Profile fetch error:", profileError)
-            // If no profile exists, create one
-            const { data: newProfile, error: insertError } = await supabase.from("users").insert([
+            // If no profile exists, create one with the role from auth metadata
+            const userRole = authData.user.user_metadata?.role || "buyer"
+            const { data: newProfile, error: insertError } = await supabaseAdmin.from("users").insert([
               {
-                id: data.user.id,
-                email: data.user.email,
-                full_name: data.user.user_metadata?.full_name || "",
-                name: data.user.user_metadata?.name || "",
-                role: "buyer",
+                id: authData.user.id,
+                email: authData.user.email,
+                full_name: authData.user.user_metadata?.full_name || "",
+                name: authData.user.user_metadata?.name || "",
+                role: userRole,
+                seller_name: userRole === "seller" ? (authData.user.user_metadata?.name || "") : null,
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
               },
-            ]).select().single()
+            ])
+            .select()
+            .single()
 
             if (insertError) {
               console.error("Error creating user profile:", insertError)
@@ -56,10 +60,10 @@ export const authOptions = {
             }
 
             return {
-              id: newProfile?.id || data.user.id,
-              email: newProfile?.email || data.user.email,
-              name: newProfile?.name || data.user.user_metadata?.name || "",
-              role: newProfile?.role || "buyer",
+              id: newProfile?.id || authData.user.id,
+              email: newProfile?.email || authData.user.email,
+              name: newProfile?.name || authData.user.user_metadata?.name || "",
+              role: newProfile?.role || userRole,
             }
           }
 
@@ -98,7 +102,7 @@ export const authOptions = {
       if (account?.provider === "google") {
         try {
           // Check if user exists in our database
-          const { data: existingUser, error } = await supabase
+          const { data: existingUser, error } = await supabaseAdmin
             .from("users")
             .select("*")
             .eq("email", user.email)
@@ -111,7 +115,7 @@ export const authOptions = {
 
           if (!existingUser) {
             // Create new user profile
-            const { error: insertError } = await supabase.from("users").insert([
+            const { error: insertError } = await supabaseAdmin.from("users").insert([
               {
                 id: user.id,
                 email: user.email,
