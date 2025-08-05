@@ -150,6 +150,7 @@ export async function POST(request) {
         price: numericPrice,
         category_id: category_id,
         seller_id: session.user.id,
+        stock: numericStock,
         stock_quantity: numericStock,
         image_url: image_url || null,
         created_at: new Date().toISOString(),
@@ -183,7 +184,8 @@ export async function POST(request) {
     const processedProduct = {
       ...product,
       price: Number.parseFloat(product.price) || 0,
-      stock_quantity: Number.parseInt(product.stock_quantity) || 0,
+      stock: Number.parseInt(product.stock) || 0,
+      stock_quantity: Number.parseInt(product.stock_quantity) || Number.parseInt(product.stock) || 0,
     }
 
     return NextResponse.json(processedProduct, { status: 201 })

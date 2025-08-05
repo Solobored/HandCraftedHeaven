@@ -54,7 +54,7 @@ export async function POST(request) {
 
       // Try to insert the user profile manually if trigger didn't work
       try {
-        const { error: insertError } = await supabase.from("users").upsert(
+        const { data: userProfile, error: insertError } = await supabase.from("users").upsert(
           [
             {
               id: data.user.id,
@@ -70,12 +70,14 @@ export async function POST(request) {
           {
             onConflict: "id",
           },
-        )
+        ).select().single()
 
         if (insertError) {
           console.error("Error inserting user profile:", insertError)
           // Don't fail registration, the user was created in auth
         }
+
+        console.log("User profile created:", userProfile)
       } catch (profileError) {
         console.error("Profile creation error:", profileError)
         // Continue anyway
