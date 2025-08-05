@@ -17,18 +17,26 @@ export async function GET() {
 
     if (productsError) throw productsError
 
-    // Get total sales (sum of total_amount from orders)
-    // Note: This is a simplified sum. In a real app, you might filter by status (e.g., 'completed')
-    const { data: salesData, error: salesError } = await supabaseAdmin.from("orders").select("total_amount")
+    // Get total sellers
+    const { count: totalSellers, error: sellersError } = await supabaseAdmin
+      .from("users")
+      .select("*", { count: "exact", head: true })
+      .eq("role", "seller")
 
-    if (salesError) throw salesError
+    if (sellersError) throw sellersError
 
-    const totalSales = salesData.reduce((sum, order) => sum + Number.parseFloat(order.total_amount), 0)
+    // Get total orders
+    const { count: totalOrders, error: ordersError } = await supabaseAdmin
+      .from("orders")
+      .select("*", { count: "exact", head: true })
+
+    if (ordersError) throw ordersError
 
     return NextResponse.json({
       totalUsers,
       totalProducts,
-      totalSales,
+      totalSellers,
+      totalOrders,
     })
   } catch (error) {
     console.error("Error fetching admin stats:", error)

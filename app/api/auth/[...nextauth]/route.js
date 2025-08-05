@@ -24,6 +24,7 @@ export const authOptions = {
           })
 
           if (error || !data.user) {
+            console.error("Supabase auth error:", error)
             return null
           }
 
@@ -35,8 +36,9 @@ export const authOptions = {
             .single()
 
           if (profileError || !userProfile) {
+            console.error("Profile fetch error:", profileError)
             // If no profile exists, create one
-            const { error: insertError } = await supabase.from("users").insert([
+            const { data: newProfile, error: insertError } = await supabase.from("users").insert([
               {
                 id: data.user.id,
                 email: data.user.email,
@@ -46,17 +48,18 @@ export const authOptions = {
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
               },
-            ])
+            ]).select().single()
 
             if (insertError) {
               console.error("Error creating user profile:", insertError)
+              return null
             }
 
             return {
-              id: data.user.id,
-              email: data.user.email,
-              name: data.user.user_metadata?.name || "",
-              role: "buyer",
+              id: newProfile?.id || data.user.id,
+              email: newProfile?.email || data.user.email,
+              name: newProfile?.name || data.user.user_metadata?.name || "",
+              role: newProfile?.role || "buyer",
             }
           }
 
