@@ -37,14 +37,16 @@ export const authOptions = {
 
           if (profileError || !userProfile) {
             console.error("Profile fetch error:", profileError)
-            // If no profile exists, create one with supabaseAdmin
+            // If no profile exists, create one with the role from auth metadata
+            const userRole = authData.user.user_metadata?.role || "buyer"
             const { data: newProfile, error: insertError } = await supabaseAdmin.from("users").insert([
               {
                 id: authData.user.id,
                 email: authData.user.email,
                 full_name: authData.user.user_metadata?.full_name || "",
                 name: authData.user.user_metadata?.name || "",
-                role: "buyer",
+                role: userRole,
+                seller_name: userRole === "seller" ? (authData.user.user_metadata?.name || "") : null,
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
               },
@@ -61,7 +63,7 @@ export const authOptions = {
               id: newProfile?.id || authData.user.id,
               email: newProfile?.email || authData.user.email,
               name: newProfile?.name || authData.user.user_metadata?.name || "",
-              role: newProfile?.role || "buyer",
+              role: newProfile?.role || userRole,
             }
           }
 

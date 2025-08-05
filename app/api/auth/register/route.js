@@ -53,7 +53,7 @@ export async function POST(request) {
       // Wait a moment for the trigger to potentially create the user
       await new Promise((resolve) => setTimeout(resolve, 1000))
 
-      // Try to insert the user profile manually if trigger didn't work
+      // Always try to insert/update the user profile to ensure it exists
       try {
         const { data: userProfile, error: insertError } = await supabaseAdmin.from("users").upsert(
           [
@@ -70,6 +70,7 @@ export async function POST(request) {
           ],
           {
             onConflict: "id",
+            ignoreDuplicates: false,
           },
         )
         .select()
@@ -77,13 +78,13 @@ export async function POST(request) {
 
         if (insertError) {
           console.error("Error inserting user profile:", insertError)
-          // Don't fail registration, the user was created in auth
+          return NextResponse.json({ error: "Failed to create user profile: " + insertError.message }, { status: 500 })
         }
 
         console.log("User profile created:", userProfile)
       } catch (profileError) {
         console.error("Profile creation error:", profileError)
-        // Continue anyway
+        return NextResponse.json({ error: "Failed to create user profile" }, { status: 500 })
       }
 
       return NextResponse.json(
