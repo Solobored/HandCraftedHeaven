@@ -11,37 +11,37 @@ const categories = [
     name: "Home Decor",
     slug: "home-decor",
     description: "Beautiful handcrafted items to make your house a home",
-    image: "/placeholder.svg?height=300&width=400",
+    image: "/Home-decor.webp?height=300&width=400",
   },
   {
     name: "Jewelry",
     slug: "jewelry",
     description: "Unique, handmade jewelry pieces that tell your story",
-    image: "/placeholder.svg?height=300&width=400",
+    image: "/Jewelry.webp?height=300&width=400",
   },
   {
     name: "Art Collection",
     slug: "art-collection",
     description: "Original artwork from talented artists worldwide",
-    image: "/placeholder.svg?height=300&width=400",
+    image: "/Art-collection.webp?height=300&width=400",
   },
   {
     name: "Kitchen",
     slug: "kitchen",
     description: "Handcrafted kitchenware for the culinary enthusiast",
-    image: "/placeholder.svg?height=300&width=400",
+    image: "/Kitchen.webp?height=300&width=400",
   },
   {
     name: "Clothing",
     slug: "clothing",
     description: "Handmade clothing and accessories with character",
-    image: "/placeholder.svg?height=300&width=400",
+    image: "/Clothing.webp?height=300&width=400",
   },
   {
     name: "Gifts",
     slug: "gifts",
     description: "Perfect handcrafted gifts for every occasion",
-    image: "/placeholder.svg?height=300&width=400",
+    image: "/Gifts.webp?height=300&width=400",
   },
 ]
 

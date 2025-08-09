@@ -32,7 +32,7 @@ export default function Hero() {
         <div className="md:w-1/2 flex justify-center md:justify-end">
           <div className="relative w-[300px] h-[300px] md:w-[500px] md:h-[500px]">
             <Image
-              src="/placeholder.svg?height=600&width=500"
+              src="/Handcrafetedheaven.png?height=600&width=500"
               alt="Assortment of handcrafted items"
               layout="fill"
               objectFit="contain"
